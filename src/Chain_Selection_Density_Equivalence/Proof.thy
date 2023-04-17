@@ -830,10 +830,10 @@ interpretation test_protocol_parameters: protocol_parameters test_k test_f
   unfolding test_maxvalid_bg_def
   by unfold_locales simp_all
 
-abbreviation make_test_block :: "slot \<Rightarrow> block" ("B\<^bsub>_\<^esub>") where
+abbreviation make_test_block :: "slot \<Rightarrow> block" (\<open>B\<^bsub>_\<^esub>\<close>) where
   "B\<^bsub>sl\<^esub> \<equiv> (sl, ())"
 
-abbreviation make_test_chain :: "slot list \<Rightarrow> chain" ("\<langle>_\<rangle>") where
+abbreviation make_test_chain :: "slot list \<Rightarrow> chain" (\<open>\<langle>_\<rangle>\<close>) where
   "\<langle>ss\<rangle> \<equiv> map make_test_block ss"
 
 abbreviation test_equivalence where
