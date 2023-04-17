@@ -95,8 +95,8 @@ fun induced_subchain :: "chain \<Rightarrow> slot_interval \<Rightarrow> chain" 
 | "induced_subchain \<C> (RightOpenInterval sl) = filter (\<lambda>B. bslot B \<ge> sl) \<C>"
 
 syntax
-  "_INDUCED_SUBCHAIN_CLOSED_INTERVAL" :: "chain \<Rightarrow> slot \<Rightarrow> slot \<Rightarrow> chain" ("_[_;_]" [70, 0, 0] 70)
-  "_INDUCED_SUBCHAIN_RIGHT_OPEN_INTERVAL" :: "chain \<Rightarrow> slot \<Rightarrow> slot \<Rightarrow> chain" ("_[_;] " [70, 0] 70)
+  "_INDUCED_SUBCHAIN_CLOSED_INTERVAL" :: "chain \<Rightarrow> slot \<Rightarrow> slot \<Rightarrow> chain" (\<open>_[_;_]\<close> [70, 0, 0] 70)
+  "_INDUCED_SUBCHAIN_RIGHT_OPEN_INTERVAL" :: "chain \<Rightarrow> slot \<Rightarrow> slot \<Rightarrow> chain" (\<open>_[_;] \<close> [70, 0] 70)
 
 translations
   "\<C>[sl\<^sub>1;sl\<^sub>2]" \<rightleftharpoons> "CONST induced_subchain \<C> (CONST ClosedInterval sl\<^sub>1 sl\<^sub>2)"
