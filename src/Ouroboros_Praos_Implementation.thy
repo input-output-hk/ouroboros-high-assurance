@@ -1542,7 +1542,9 @@ corollary apply_block_soundness:
   and "are_applicable_txs txs \<S>"
   and "are_known_stakeholders txs \<S>"
   shows "\<S> \<rightarrow>\<^sub>b{B} \<S>'"
-  using assms and fold_apply_transaction_soundness by simp
+  using assms(1,3,4)
+  unfolding apply_block_def and assms(2)
+  by (fact fold_apply_transaction_soundness)
 
 lemma fold_apply_transaction_completeness:
   assumes "\<S> \<rightarrow>\<^sup>*{txs} \<S>'"
@@ -1717,7 +1719,8 @@ proof (unfold are_applicable_txs_def, intro allI ballI impI, elim conjE)
     moreover from assms(2) have "are_known_stakeholders txs \<S>"
       by blast
     ultimately show ?thesis
-      using f\<^sub>3 and fold_apply_transaction_soundness by simp
+      using f\<^sub>3
+      by (intro fold_apply_transaction_soundness)
   qed
   with assms(1) and f\<^sub>2 show "s \<le> \<S>'' $$! U\<^sub>i"
     by force
@@ -1743,7 +1746,7 @@ proof (unfold are_applicable_txs_def, intro allI ballI impI, elim conjE)
       moreover from a\<^sub>1 have "i < length txs"
         by simp
       moreover from True and a\<^sub>3 have "\<S> \<rightarrow>\<^sup>*{take i txs} \<S>''"
-        by (simp add: min.strict_order_iff)
+        by simp
       ultimately show ?thesis
         using assms(1) by fastforce
     qed
@@ -2319,7 +2322,7 @@ lemma longest_chains_shorter_element:
   shows "longest_chains (\<C> # \<CC>) = longest_chains \<CC>"
 proof -
   from assms have "[\<C>' \<leftarrow> \<CC>. is_longest_chain \<C>' (\<C> # \<CC>)] = [\<C>' \<leftarrow> \<CC>. is_longest_chain \<C>' \<CC>]"
-    by (metis (mono_tags, hide_lams) dual_order.trans le_cases list.set_intros(2) set_ConsD)
+    by (metis (no_types, lifting) dual_order.trans linorder_le_cases list.set_intros(2) set_ConsD)
   with assms show ?thesis
     unfolding longest_chains_def by auto
 qed
