@@ -21,7 +21,7 @@ text \<open>
   security properties of the protocol. Thus, we model these ideal functionalities as locale's.
 \<close>
 
-no_notation Sublist.parallel (infixl "\<parallel>" 50)
+no_notation Sublist.parallel (infixl \<open>\<parallel>\<close> 50)
 
 subsection \<open> Preliminaries \<close>
 
