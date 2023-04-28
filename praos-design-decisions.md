@@ -157,8 +157,7 @@ However, it is probably better to use the computer science's convention
 of zero-based indexing in order to facilitate computations involving
 indexes.
 
-## Initialization phase and the functionality
-$\mathcal{F}_\mathsf{INIT}$
+## Initialization phase and the functionality $\mathcal{F}_\mathsf{INIT}$
 
 The paper includes an ideal functionality $\mathcal{F}_\mathsf{INIT}$,
 which is passed the initial stakes of all stakeholders as parameters
