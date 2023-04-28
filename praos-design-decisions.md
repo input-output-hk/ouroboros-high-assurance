@@ -118,3 +118,33 @@ functions have certain properties, e.g., they are one-way functions,
 meaning that they are difficult to invert by an efficient adversary.
 But, this property is probabilistic in nature, so we cannot enforce it
 in the code.
+
+## Protocol parameters
+
+### Parameter $k$
+
+As the paper states, the parameter $k$ establishes how deep in the chain
+(in terms of number of blocks) a transaction needs to be in order to be
+declared as stable. Although the paper does not explicitly say whether
+$k$ must be positive (it does say that $k \in \N$), Theorem 7 (Chain
+quality) defines $\mu = 1/k$, therefore $k$ must be positive.
+
+### Parameter $f$
+
+The parameter $f$, called *active slot coefficient*, establishes the
+probability that at least one stakeholder is elected as a slot leader in
+each slot, that is, the probability that a slot is not empty. Although
+the paper does not explicitly say so, we assume $f$ to be a strictly
+positive probability; otherwise all slots would be empty. Moreover, for
+example, Theorem 4 in the paper assumes $f \in (0, 1]$.
+
+### Parameter $\epsilon$
+
+The parameter $\epsilon$ represents the advantage in terms of stake of
+the honest stakeholders against the adversarial ones. Although the paper
+does not explicitly say so, we assume $\epsilon \in (0,1)$, as is the
+case for example in Theorem 5 (Common prefix) in the paper. Finally,
+although the parameter $\epsilon$ is used almost exclusively in the
+security analysis of the protocol, we need to include it nevertheless,
+since it is also used in the computation of the new epoch randomness
+performed by the sub-protocol $\pi_{RLB}$.
