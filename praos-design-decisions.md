@@ -148,3 +148,11 @@ although the parameter $\epsilon$ is used almost exclusively in the
 security analysis of the protocol, we need to include it nevertheless,
 since it is also used in the computation of the new epoch randomness
 performed by the sub-protocol $\pi_{RLB}$.
+
+## Slots and epochs
+
+For numbering slots and epochs, the paper uses the mathematician's
+convention of starting from 1, and so we do in our formalization.
+However, it is probably better to use the computer science's convention
+of zero-based indexing in order to facilitate computations involving
+indexes.
