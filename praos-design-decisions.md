@@ -156,3 +156,43 @@ convention of starting from 1, and so we do in our formalization.
 However, it is probably better to use the computer science's convention
 of zero-based indexing in order to facilitate computations involving
 indexes.
+
+## Initialization phase and the functionality
+$\mathcal{F}_\mathsf{INIT}$
+
+The paper includes an ideal functionality $\mathcal{F}_\mathsf{INIT}$,
+which is passed the initial stakes of all stakeholders as parameters
+and does the following:
+
+ 1. Receives the verification keys from each stakeholder during the
+ first round of the protocol and stores them locally.
+ 2. When all stakeholders have sent their verification keys, it
+ constructs a genesis block including these keys, the initial stakes,
+ and an initial random value $\eta$.
+ 3. When asked by a stakeholder in later rounds, it sends the genesis
+ block to the stakeholder.
+
+On the other hand, the stakeholder's initialization phase comprises the
+following steps:
+
+ 1. In the first round, the stakeholder sends requests to
+ $\mathcal{F}_\mathsf{VRF}$, $\mathcal{F}_\mathsf{KES}$, and
+ $\mathcal{F}_\mathsf{DSIG}$ to generate their verification keys, and
+ then sends them to $\mathcal{F}_\mathsf{INIT}$.
+ 2. In the next round, the stakeholder obtains the genesis block from
+ $\mathcal{F}_\mathsf{INIT}$.
+
+In our formalization, we have simplified this initialization protocol
+in several ways:
+
+1. We do not model $\mathcal{F}_\mathsf{INIT}$.
+2. Each stakeholder is parametrized with its secret keys. **NOTE**:
+This may be an over-simplification, since the `generate` function of the
+VRF and digital signature modules should be used instead.
+3. The verification keys of each stakeholder reside only in the genesis
+block, which is given to each stakeholder as a parameter. **NOTE**: This
+may be an over-simplification, since the `generate` function of the VRF
+and digital signature modules should be used instead. But then again,
+some protocol similar to the one used with $\mathcal{F}_\mathsf{INIT}$
+in the paper should be used in order for stakeholders to be able to
+publish their verification keys.
