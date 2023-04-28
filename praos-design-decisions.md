@@ -32,3 +32,89 @@ participants, much like sub-routines. These ideal functionalities can be
 replaced later with concrete implementations without affecting the
 security properties of the protocol. Thus, we model these ideal
 functionalities as Isabelle `locale`s.
+
+## Cryptographic primitives
+
+### Public-key cryptography
+
+The Ouroboros Praos protocol is based on a public-key cryptographic
+system. We state a correctness property that establishes a relationship
+between the generated verification and secret keys: if we generate the
+keys using the key generation function then it is possible to retrieve
+the verification key from the secret key. Although not explicitly
+stated, the paper assumes this property holds. Another property that is
+normally assumed is that it is infeasible (i.e., having a negligible
+probability) to derive the secret key from the public key. However,
+since this is a probabilistic security property, we leave it out.
+
+Further, in cryptography, key generation is usually modeled as an
+efficient probabilistic algorithm. However, we adopt a more realistic
+approach and model the key generator as an ordinary, deterministic
+algorithm.
+
+### Digital signatures
+
+The paper describes two digital signature schemes: A regular digital
+signature scheme, denoted by $\mathcal{F}_{\mathsf{DSIG}}$, which is
+used to sign transactions, and a special digital signature scheme,
+denoted by $\mathcal{F}_{\mathsf{KES}}$, which is used to sign blocks
+and has the capability of allowing the signing key to evolve, in such a
+way that the adversary cannot forge past signatures. For our purposes,
+though, we model a single, ordinary digital signature scheme for signing
+both transactions and blocks.
+
+In traditional cryptography, signing and verification procedures are
+efficient algorithms. Moreover, the former is usually probabilistic (as
+is the case in the paper). However, again, we model both procedures as
+ordinary, deterministic algorithms. Regarding properties, and as stated
+in the paper, we only require a correctness property stating that the
+signature produced by signing a message can be checked to be valid,
+provided that the verification key used to check the validity of the
+signature is derived from the secret key used to sign the message. This
+correctness property, though, changes a bit for the case of
+$\mathcal{F}_{\mathsf{KES}}$, a fact that we naturally ignore.
+
+Finally, the paper states that the scheme $\mathcal{F}_{\mathsf{DSIG}}$
+is EUF-CMA-secure, and that the scheme $\mathcal{F}_{\mathsf{KES}}$ is
+secure with respect to a special definition of forward security. As
+usual, we do not enforce this security properties but simply assume
+them.
+
+### Verifiable random functions (VRF)
+
+In the Praos protocol, the stakeholders use a VRF for executing the
+private lottery to check whether they're slot leaders for a particular
+slot. Also, stakeholders use a VRF to include a pseudorandom value in
+each block they produce. The paper uses a special VRF which is more
+secure than standard VRFs, since it guarantees that VRF values cannot be
+predicted even if the adversary is allowed to generate the secret and
+verification keys. Naturally, for this work, we stick to the regular
+definition of a VRF.
+
+In traditional cryptography, evaluation of VRFs (and pseudorandom
+functions in general) is an efficient algorithm; however we only assume
+that. Regarding properties, and as stated in the paper, VRFs satisfy the
+properties of uniqueness, provability, and pseudorandomness (i.e., it is
+difficult for an efficient adversary to distinguish a VRF value from a
+truly random value). Since this last property is probabilistic in nature,
+we only require the first two properties.
+
+Finally, in the paper, pseudorandom values produced by VRFs are
+bit-strings, which can be regarded as values of any type and thus we
+model them by using a type parameter. However, the paper loosely uses
+such values in the comparison to a *real-valued* threshold to check for
+slot leadership. Therefore, we require the existence of a function
+`value_to_real` in the interface of VRFs that casts VRF values to real
+numbers.
+
+### Hash functions
+
+The paper uses the *Random Oracle Model* (ROM). In the ROM, a hash
+function is modeled as a random oracle, which is basically a magical
+black box that implements a truly random function. As the ROM is used
+just for the purposes of the security proof, we model a collision-free
+cryptographic hash functions instead. Theoretically, cryptographic hash
+functions have certain properties, e.g., they are one-way functions,
+meaning that they are difficult to invert by an efficient adversary.
+But, this property is probabilistic in nature, so we cannot enforce it
+in the code.
