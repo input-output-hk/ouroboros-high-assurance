@@ -126,8 +126,8 @@ in the code.
 As the paper states, the parameter $k$ establishes how deep in the chain
 (in terms of number of blocks) a transaction needs to be in order to be
 declared as stable. Although the paper does not explicitly say whether
-$k$ must be positive (it does say that $k \in \N$), Theorem 7 (Chain
-quality) defines $\mu = 1/k$, therefore $k$ must be positive.
+$k$ must be positive (it does say that $k \in \mathbb{N}$), Theorem 7
+(Chain quality) defines $\mu = 1/k$, therefore $k$ must be positive.
 
 ### Parameter $f$
 
