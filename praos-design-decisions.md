@@ -149,6 +149,16 @@ security analysis of the protocol, we need to include it nevertheless,
 since it is also used in the computation of the new epoch randomness
 performed by the sub-protocol $\pi_{RLB}$.
 
+## The static and dynamic stake cases
+
+The paper describes and analyzes the protocol in two settings: The
+_static stake_ case and the _dynamic stake_ case. In the former, the
+initial stake distribution is hardcoded into the genesis block and
+remains fixed during the whole execution (i.e., one epoch); in the
+latter, the stake distribution is allowed to change over time and the
+protocol execution spans multiple epochs. Since we are not interested in
+the security analysis, we model the full protocol.
+
 ## Slots and epochs
 
 For numbering slots and epochs, the paper uses the mathematician's
