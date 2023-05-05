@@ -205,3 +205,23 @@ and digital signature modules should be used instead. But then again,
 some protocol similar to the one used with $\mathcal{F}\_\mathsf{INIT}$
 in the paper should be used in order for stakeholders to be able to
 publish their verification keys.
+## Transactions and blocks
+
+In the paper, the environment $\mathcal{Z}$ issues transactions on
+behalf of any stakeholder $U_i$ by requesting a signature on the
+transaction and handing the transaction data $^*d \in \{0,1\}^*$ to
+stakeholders to put them into blocks. We decide not to model transaction
+processing this way but use a more realistic approach instead:
+Transactions are assumed to be received by stakeholders through the
+network.
+
+Regarding the application of a transaction to a stake distribution, the
+paper does not define how this is done, so we use the intuitive
+definition and assume that the source and target stakeholders exist in
+the stake distribution and that the source stakeholder has enough stake
+for the withdrawal.
+
+Regarding the application of a block to a stake distribution, the paper
+does not define how this is done, so we assume that it simply means
+applying all transactions in the block to the stake distribution.
+
