@@ -225,3 +225,14 @@ Regarding the application of a block to a stake distribution, the paper
 does not define how this is done, so we assume that it simply means
 applying all transactions in the block to the stake distribution.
 
+## Functionality $\mathcal{F}^{\tau,r}\_{RLB}$ and subprotocol $\pi\_{RLB}$
+
+In the paper, the functionality $\mathcal{F}^{\tau,r}\_{RLB}$ models a
+randomness beacon that basically provides a fresh nonce for each epoch
+to (re)seed the election process. Furthermore, this beacon is resettable
+and leaky in order to strengthen the adversary, as the purpose of the
+beacon is to enable the security analysis of the full protocol. The
+paper also presents a subprotocol $\pi\_{RLB}$ that simulates the beacon
+in the $\mathcal{F}\_\mathsf{INIT}$-hybrid model via a simple algorithm
+that collects randomness from the blockchain. Therefore, we choose to
+directly model $\pi\_{RLB}$, which is ultimately used by implementations.
