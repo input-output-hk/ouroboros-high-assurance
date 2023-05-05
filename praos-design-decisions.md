@@ -209,7 +209,7 @@ publish their verification keys.
 
 In the paper, the environment $\mathcal{Z}$ issues transactions on
 behalf of any stakeholder $U_i$ by requesting a signature on the
-transaction and handing the transaction data $^\*d \in \{0,1\}^\*$ to
+transaction and handing the transaction data $d^\* \in \{0,1\}^\*$ to
 stakeholders to put them into blocks. We decide not to model transaction
 processing this way but use a more realistic approach instead:
 Transactions are assumed to be received by stakeholders through the
