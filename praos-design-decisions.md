@@ -236,3 +236,12 @@ paper also presents a subprotocol $\pi\_{RLB}$ that simulates the beacon
 in the $\mathcal{F}\_\mathsf{INIT}$-hybrid model via a simple algorithm
 that collects randomness from the blockchain. Therefore, we choose to
 directly model $\pi\_{RLB}$, which is ultimately used by implementations.
+
+## Chain selection rule
+
+According to the paper, the function $\mathsf{maxvalid}$ should favor the
+current chain if it is the longest, otherwise choose arbitrarily. In the
+latter case, we make a specific decision, namely, we choose a chain that
+was delivered first out of those with maximal length (which is one of
+the possible choices suggested by the paper). However, if the need
+arises, it is possible to leave this choice unspecified.
