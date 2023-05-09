@@ -263,3 +263,24 @@ current slot, and that any clock drift is subsumed in the slot length.
 In the same spirit, we assume the existence of an external
 'clock process' that signals each stakeholder when a round (i.e., slot)
 ends.
+
+## The "Delayed Diffuse" functionality
+
+We do not model the network as a separate ideal functionality
+$\textsf{DDiffuse}_\Delta$ but rely on our process calculus features for
+communication. In particular, each stakeholder is parametrized with a
+'network interface', comprised by a dedicated channel used to receive
+messages from the network (stored in the stakeholder's 'incoming string'
+or 'mailbox' in the paper's parlance) and another dedicated channel used
+to broadcast (or 'diffuse', in the paper's parlance) a message to the
+network.
+
+Also, the $\textsf{DDiffuse}_\Delta$ functionality guarantees that
+messages sent in a round are received with a delay of at most $\Delta$
+rounds. As mentioned before, we instead assume that the protocol is
+executed on a network featuring eventual delivery of messages.
+
+Finally, the paper states that a stakeholder is allowed to diffuse once
+in a round. We enforce this restriction explicitly in the stakeholder
+process implementation, which broadcasts a chain once at the end of the
+current round should the stakeholder is elected as a slot leader.
