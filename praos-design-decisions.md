@@ -245,6 +245,24 @@ Regarding the application of a block to a stake distribution, the paper
 does not define how this is done, so we assume that it simply means
 applying all transactions in the block to the stake distribution.
 
+## Chains
+
+In regards to the validity of chains, it is important to point out that
+there is a mismatch between the earlier paper used for our specification
+and the latest version: In the former, chains that include blocks with
+slots in the future are not rejected but pruned accordingly, whereas in
+the later such chains should be rejected.
+
+On the other hand, regarding the chain extension procedure, there is an
+improvement in the latest version of the paper: The hash value of the
+tip of the current best chain, called 'state', is computed on the fly
+only when constructing a new block; whereas in the earlier paper this
+state is kept internally and updated whenever a new local chain is
+adopted, as well as before a new block is difussed.
+
+Again, we may have to adapt our specification to cope with the
+above-mentioned changes.
+
 ## Functionality $\mathcal{F}^{\tau,r}\_{RLB}$ and subprotocol $\pi\_{RLB}$
 
 In the paper, the functionality $\mathcal{F}^{\tau,r}\_{RLB}$ models a
