@@ -6,6 +6,11 @@ were made during the development of the current version of the
 specification formalized in Isabelle/HOL. In particular, it is reported
 what aspects were modeled (and how) and what aspects were left out.
 
+It is important to note that our specification is based on
+[**an earlier version of the paper**](https://link.springer.com/chapter/10.1007/978-3-319-78375-8_3),
+therefore it may be necessary to revise the specification to adapt it to
+the latest version.
+
 ## Original goal
 
 The original goal for implementing a version of Ouroboros Praos in
