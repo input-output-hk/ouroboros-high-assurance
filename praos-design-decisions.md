@@ -322,3 +322,11 @@ Finally, the paper states that a stakeholder is allowed to diffuse once
 in a round. We enforce this restriction explicitly in the stakeholder
 process implementation, which broadcasts a chain once at the end of the
 current round should the stakeholder is elected as a slot leader.
+
+## Stakeholder state
+
+The paper assumes that a stakeholder internally stores certain type of
+data, such as the set of chains and transactions received from the
+network in the current slot. We define a specific structure to hold
+all the data that is needed for a stakeholder to be able to run the
+protocol, e.g., its transaction mempool.
