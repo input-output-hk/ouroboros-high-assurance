@@ -220,6 +220,21 @@ processing this way but use a more realistic approach instead:
 Transactions are assumed to be received by stakeholders through the
 network.
 
+The paper does not impose any definition of validity of transactions,
+therefore we assume a sensible definition based on implementations,
+which happens to coincide with Definition 4 in the latest version of
+the paper. However, since this definition is not precise enough in our
+opinion, we assume that the references to $x$ are actually to $s$ and
+that $x \in \mathbb{N}$ instead of $x \in \mathbb{Z}$. Also, it is
+important to point out that there is a mismatch between the earlier
+paper used for our specification and the latest version: In the former,
+the transaction data received from the environment is not validated
+prior to including it in a new block, whereas in the latter transaction
+data is validated in order to extract the maximal sequence of
+transactions that is consistent with the current local chain. As
+already mentioned, we may have to adapt our specification to cope with
+this change.
+
 Regarding the application of a transaction to a stake distribution, the
 paper does not define how this is done, so we use the intuitive
 definition and assume that the source and target stakeholders exist in
