@@ -330,3 +330,14 @@ data, such as the set of chains and transactions received from the
 network in the current slot. We define a specific structure to hold
 all the data that is needed for a stakeholder to be able to run the
 protocol, e.g., its transaction mempool.
+
+## Formal proofs of properties
+
+Currently, our specification of the protocol is accompanied by a
+battery of formal proofs, which comprise basically sanity checks
+of the sequential parts of the code, as well as proofs of very
+basic properties such as the "independent aggregation" property
+stated in the paper. For checking functions operating on
+transactions, blocks and chains, we define appropriate state
+transition systems which constitute a sort of "mini-ledger",
+very much in the spirit of the Cardano ledger specification.
