@@ -245,3 +245,21 @@ latter case, we make a specific decision, namely, we choose a chain that
 was delivered first out of those with maximal length (which is one of
 the possible choices suggested by the paper). However, if the need
 arises, it is possible to leave this choice unspecified.
+
+## The semi-synchronous setting
+
+In the paper, a semi-synchronous model with an upper bound $\Delta$ in
+message delay is used, which is unknown to the stakeholders. Regarding
+$\Delta$, we stress the fact that the protocol is oblivious of $\Delta$
+and this bound is only used in the security analysis. Hence, from the
+protocol's point of view, the network is no better than an eventual
+delivery network (without a concrete bound). This can be easily modeled
+using our process calculus, for example, as a reliable broadcasting
+server process.
+
+Regarding synchrony of processors, the paper assumes that stakeholders
+are equipped with (roughly) synchronized clocks that indicate the
+current slot, and that any clock drift is subsumed in the slot length.
+In the same spirit, we assume the existence of an external
+'clock process' that signals each stakeholder when a round (i.e., slot)
+ends.
