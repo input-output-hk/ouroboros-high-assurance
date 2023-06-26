@@ -15,4 +15,5 @@ jobs:
           source-path: src
           isabelle-version: 2022
           afp-sessions: ''
-          github-sessions: ''
+          github-sessions:
+            input-output-hk/thorn-calculus:src
