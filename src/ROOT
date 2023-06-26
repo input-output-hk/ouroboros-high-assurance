@@ -3,5 +3,9 @@ chapter IOG
 session Ouroboros = HOL +
   description
     \<open>High-assurance implementation of the Ouroboros protocol family.\<close>
+  sessions
+    "Finite-Map-Extras"
+  theories
+    "Ouroboros_Praos_Implementation"
   document_files
     "root.tex"
