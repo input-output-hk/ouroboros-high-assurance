@@ -123,7 +123,7 @@ locale vrf = keys generate verification_key_of
     and provability: "vk = verification_key_of sk \<longrightarrow> verify vk x (evaluate sk x)"
 
 text \<open>
-  We also model two special tags that are used as súffixes when calling the VRF: \<open>TEST\<close> is used in
+  We also model two special tags that are used as suffixes when calling the VRF: \<open>TEST\<close> is used in
   slot leader election, and \<open>NONCE\<close> when creating and validating block nonces. The purpose of these
   tags is to provide domain separation, i.e. that we can simulate two independent `virtual VRFs'
   from a single VRF:
