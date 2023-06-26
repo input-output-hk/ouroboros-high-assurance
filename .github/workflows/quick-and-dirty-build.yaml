@@ -14,6 +14,7 @@ jobs:
           chapter-name: IOG
           source-path: src
           isabelle-version: 2022
-          afp-sessions: ''
+          afp-sessions:
+            Finite-Map-Extras:2022-10-27
           github-sessions:
             input-output-hk/thorn-calculus:src
