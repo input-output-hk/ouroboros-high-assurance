@@ -8,5 +8,6 @@ session Ouroboros = HOL +
     "Finite-Map-Extras"
   theories
     "Ouroboros_Praos_Implementation"
+    "Finite_Map_Extras_Test"
   document_files
     "root.tex"
