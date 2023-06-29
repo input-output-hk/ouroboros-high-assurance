@@ -2,9 +2,9 @@ section \<open> Implementation of the Ouroboros Praos protocol \<close>
 
 theory Ouroboros_Praos_Implementation
   imports
-    "Finite_Map_Extras_Test"
     "HOL-Library.BNF_Corec"
     "HOL-Library.Sublist"
+    "Finite_Map_Extras_Test"
     "Thorn_Calculus.Thorn_Calculus-Processes"
     Complex_Main
 begin
