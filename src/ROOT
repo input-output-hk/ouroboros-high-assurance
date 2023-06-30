@@ -4,8 +4,8 @@ session Ouroboros = HOL +
   description
     \<open>High-assurance implementation of the Ouroboros protocol family.\<close>
   sessions
-    "Thorn_Calculus"
     "Finite-Map-Extras"
+    "Thorn_Calculus"
   theories
     "Ouroboros_Praos_Implementation"
     "Finite_Map_Extras_Test"
