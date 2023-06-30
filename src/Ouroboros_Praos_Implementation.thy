@@ -2,10 +2,10 @@ section \<open> Implementation of the Ouroboros Praos protocol \<close>
 
 theory Ouroboros_Praos_Implementation
   imports
-    Finite_Map_Extras
     "HOL-Library.BNF_Corec"
     "HOL-Library.Sublist"
-    Chi_Calculus.Typed_Basic_Transition_System
+    "Finite_Map_Extras_Test"
+    "Thorn_Calculus.Thorn_Calculus-Processes"
     Complex_Main
 begin
 
@@ -21,7 +21,12 @@ text \<open>
   security properties of the protocol. Thus, we model these ideal functionalities as locale's.
 \<close>
 
+hide_const (open) ZFC_in_HOL.set
+
 no_notation Sublist.parallel (infixl \<open>\<parallel>\<close> 50)
+no_notation compower ("(_\<^bsup>_\<^esup>)" [1000] 1000)
+
+notation powr (\<open>(_\<^bsup>_\<^esup>)\<close> [1000] 1000)
 
 subsection \<open> Preliminaries \<close>
 
@@ -508,8 +513,6 @@ text \<open>
   leader:
 \<close>
 
-notation powr (\<open>_\<^bsup>_\<^esup>\<close> [81,81] 80)
-
 definition
   slot_leader_probability :: "relative_stake \<Rightarrow> real" (\<open>\<phi>'(_')\<close>)
 where
@@ -743,7 +746,7 @@ instance broadcast_msg :: (countable, countable, countable, countable) countable
   by countable_datatype
 
 type_synonym ('hash, 'vrf\<^sub>y, 'vrf\<^sub>\<pi>, 'sig) broadcast_channel = "
-  ('hash, 'vrf\<^sub>y, 'vrf\<^sub>\<pi>, 'sig) broadcast_msg channel"
+  ('hash, 'vrf\<^sub>y, 'vrf\<^sub>\<pi>, 'sig) broadcast_msg channel family"
 
 text \<open>
   We assume that each stakeholder has access to a channel used to receive messages broadcasted by
@@ -752,10 +755,10 @@ text \<open>
 \<close>
 
 type_synonym ('hash, 'vrf\<^sub>y, 'vrf\<^sub>\<pi>, 'sig) receive_channel = "
-  ('hash, 'vrf\<^sub>y, 'vrf\<^sub>\<pi>, 'sig) broadcast_msg channel"
+  ('hash, 'vrf\<^sub>y, 'vrf\<^sub>\<pi>, 'sig) broadcast_msg channel family"
 
 type_synonym ('hash, 'vrf\<^sub>y, 'vrf\<^sub>\<pi>, 'sig) send_channel = "
-  ('hash, 'vrf\<^sub>y, 'vrf\<^sub>\<pi>, 'sig) broadcast_msg channel"
+  ('hash, 'vrf\<^sub>y, 'vrf\<^sub>\<pi>, 'sig) broadcast_msg channel family"
 
 type_synonym ('hash, 'vrf\<^sub>y, 'vrf\<^sub>\<pi>, 'sig) network_interface = "
   ('hash, 'vrf\<^sub>y, 'vrf\<^sub>\<pi>, 'sig) send_channel \<times> ('hash, 'vrf\<^sub>y, 'vrf\<^sub>\<pi>, 'sig) receive_channel"
@@ -784,6 +787,9 @@ record ('skey, 'vkey, 'hash, 'vrf\<^sub>y, 'vrf\<^sub>\<pi>, 'sig, 'nonce) stake
   ss_sk\<^sub>v\<^sub>r\<^sub>f :: 'skey \<comment> \<open> secret key for \<open>\<F>\<close>$_{\mathsf{VRF}}$ \<close>
   ss_sk\<^sub>k\<^sub>e\<^sub>s :: 'skey \<comment> \<open> secret key for \<open>\<F>\<close>$_{\mathsf{KES}}$ \<close>
   ss_sk\<^sub>d\<^sub>s\<^sub>i\<^sub>g :: 'skey \<comment> \<open> secret key for \<open>\<F>\<close>$_{\mathsf{DSIG}}$ \<close>
+
+type_synonym ('skey, 'vkey, 'hash, 'vrf\<^sub>y, 'vrf\<^sub>\<pi>, 'sig, 'nonce) internal_channel =
+  "(('skey, 'vkey, 'hash, 'vrf\<^sub>y, 'vrf\<^sub>\<pi>, 'sig, 'nonce) stakeholder_state \<times> slot) channel family"
 
 locale stakeholders =
   digital_signature_scheme _ _ sign\<^sub>K\<^sub>E\<^sub>S verify\<^sub>K\<^sub>E\<^sub>S +
@@ -1064,71 +1070,67 @@ where
 text \<open>
   We define a process that is executed when an end-of-slot signal is received and that basically
   checks whether the associated stakeholder is a slot leader for the current slot, and, if so,
-  extends its current chain, broadcasts it to the network, and runs a continuation process:
+  extends its current chain, broadcasts it to the network, and signals the main loop process:
 \<close>
 
 private abbreviation
   start_of_slot :: "
     ('hash, 'vrf\<^sub>y, 'vrf\<^sub>\<pi>, 'sig) network_interface \<Rightarrow>
-    ('skey, 'vkey, 'hash, 'vrf\<^sub>y, 'vrf\<^sub>\<pi>, 'sig, 'nonce) stakeholder_state \<Rightarrow>
-    slot \<Rightarrow>
-    (('hash, 'vrf\<^sub>y, 'vrf\<^sub>\<pi>, 'sig) network_interface \<Rightarrow>
-    ('skey, 'vkey, 'hash, 'vrf\<^sub>y, 'vrf\<^sub>\<pi>, 'sig, 'nonce) stakeholder_state \<Rightarrow> slot \<Rightarrow> process) \<Rightarrow>
-    process"
+    ('skey, 'vkey, 'hash, 'vrf\<^sub>y, 'vrf\<^sub>\<pi>, 'sig, 'nonce) internal_channel \<Rightarrow>
+    ('skey, 'vkey, 'hash, 'vrf\<^sub>y, 'vrf\<^sub>\<pi>, 'sig, 'nonce) internal_channel \<Rightarrow>
+    process family"
 where
-  "start_of_slot ni ss sl \<K> \<equiv> (
-    let
-      (U, sk\<^sub>v\<^sub>r\<^sub>f, \<eta>, (_, \<S>\<^sub>0, _), \<C>) = (ss_id ss, ss_sk\<^sub>v\<^sub>r\<^sub>f ss, ss_\<eta> ss, ss_G ss, ss_\<C> ss)
-    in (
-      case is_slot_leader U sl sk\<^sub>v\<^sub>r\<^sub>f \<eta> \<S>\<^sub>0 \<C> of
+  "start_of_slot ni A\<^sub>m A\<^sub>s \<equiv>
+    A\<^sub>s \<triangleright>\<^sup>\<infinity> args. (case args of (ss, sl) \<Rightarrow>
+      let
+        (U, sk\<^sub>v\<^sub>r\<^sub>f, \<eta>, (_, \<S>\<^sub>0, _), \<C>) = (ss_id ss, ss_sk\<^sub>v\<^sub>r\<^sub>f ss, ss_\<eta> ss, ss_G ss, ss_\<C> ss)
+      in (
+        case is_slot_leader U sl sk\<^sub>v\<^sub>r\<^sub>f \<eta> \<S>\<^sub>0 \<C> of
           None \<Rightarrow>
-            \<zero> \<parallel> \<K> ni ss sl \<comment> \<open>\<open>\<zero> \<parallel>\<close> is added to fulfill corecursive function requirements\<close>
+            A\<^sub>m \<triangleleft> (ss, sl)
         | Some v \<Rightarrow>
           let
             ss' = extend_chain ss sl v
           in
-            (fst ni) \<triangleleft>\<degree> BroadcastChain (ss_\<C> ss') \<parallel> \<K> ni ss' sl))"
+            (fst ni) \<triangleleft> BroadcastChain (ss_\<C> ss') \<parallel> A\<^sub>m \<triangleleft> (ss', sl)))"
 
 text \<open>
   Then we define a process that executes the `main loop' of the protocol:
 \<close>
 
-private corec
+private abbreviation
   main_loop :: "
     ('hash, 'vrf\<^sub>y, 'vrf\<^sub>\<pi>, 'sig) network_interface \<Rightarrow>
-    ('skey, 'vkey, 'hash, 'vrf\<^sub>y, 'vrf\<^sub>\<pi>, 'sig, 'nonce) stakeholder_state \<Rightarrow>
-    slot \<Rightarrow>
-    process"
+    ('skey, 'vkey, 'hash, 'vrf\<^sub>y, 'vrf\<^sub>\<pi>, 'sig, 'nonce) internal_channel \<Rightarrow>
+    ('skey, 'vkey, 'hash, 'vrf\<^sub>y, 'vrf\<^sub>\<pi>, 'sig, 'nonce) internal_channel \<Rightarrow>
+    process family"
 where
-  "main_loop ni ss sl =
-    (snd ni) \<triangleright>\<degree> msg. (
-      case msg of
-        BroadcastTx tx \<Rightarrow> (
-         \<comment> \<open>Store new transaction\<close>
-          let
-            ss' = store_tx ss tx
-          in
-            main_loop ni ss' sl)
-      | BroadcastChain \<C> \<Rightarrow> (
-         \<comment> \<open>Store new chain\<close>
-          let
-            ss' = store_chain sl \<C> ss
-          in
-            main_loop ni ss' sl)
-      | BroadcastEndSlot sl\<^sub>n\<^sub>e\<^sub>x\<^sub>t \<Rightarrow> (
-          let
-            \<comment> \<open>If new epoch, compute and store new epoch randomness\<close>
-            ss' = if first_in_epoch sl\<^sub>n\<^sub>e\<^sub>x\<^sub>t then compute_new_epoch_randomness sl\<^sub>n\<^sub>e\<^sub>x\<^sub>t ss else ss;
-            \<comment> \<open>Update local chain\<close>
-            ss' = update_local_chain ss'
-          in
-            start_of_slot ni ss' sl\<^sub>n\<^sub>e\<^sub>x\<^sub>t main_loop))"
+  "main_loop ni A\<^sub>m A\<^sub>s \<equiv>
+    A\<^sub>m \<triangleright>\<^sup>\<infinity> args. (case args of (ss, sl) \<Rightarrow>
+      (snd ni) \<triangleright> msg. (
+        case msg of
+          BroadcastTx tx \<Rightarrow> (
+           \<comment> \<open>Store new transaction\<close>
+            let
+              ss' = store_tx ss tx
+            in
+              A\<^sub>m \<triangleleft> (ss', sl))
+        | BroadcastChain \<C> \<Rightarrow> (
+           \<comment> \<open>Store new chain\<close>
+            let
+              ss' = store_chain sl \<C> ss
+            in
+              A\<^sub>m \<triangleleft> (ss', sl))
+        | BroadcastEndSlot sl\<^sub>n\<^sub>e\<^sub>x\<^sub>t \<Rightarrow> (
+            let
+              \<comment> \<open>If new epoch, compute and store new epoch randomness\<close>
+              ss' = if first_in_epoch sl\<^sub>n\<^sub>e\<^sub>x\<^sub>t then compute_new_epoch_randomness sl\<^sub>n\<^sub>e\<^sub>x\<^sub>t ss else ss;
+              \<comment> \<open>Update local chain\<close>
+              ss' = update_local_chain ss'
+            in
+              A\<^sub>s \<triangleleft> (ss', sl\<^sub>n\<^sub>e\<^sub>x\<^sub>t))))"
 
-text \<open>
-  Finally, we define a process that implements a stakeholder running the protocol:
-\<close>
-
-fun
+abbreviation
   stakeholder :: "
     stakeholder_id \<Rightarrow>
     ('vkey, 'nonce) genesis \<Rightarrow>
@@ -1136,13 +1138,13 @@ fun
     'skey \<Rightarrow>
     'skey \<Rightarrow>
     ('hash, 'vrf\<^sub>y, 'vrf\<^sub>\<pi>, 'sig) network_interface \<Rightarrow>
-    process"
+    process family"
 where
-  "stakeholder U\<^sub>i G sk\<^sub>v\<^sub>r\<^sub>f sk\<^sub>k\<^sub>e\<^sub>s sk\<^sub>d\<^sub>s\<^sub>i\<^sub>g ni = (
+  "stakeholder U\<^sub>i G sk\<^sub>v\<^sub>r\<^sub>f sk\<^sub>k\<^sub>e\<^sub>s sk\<^sub>d\<^sub>s\<^sub>i\<^sub>g ni \<equiv>
     let
       ss\<^sub>i\<^sub>n\<^sub>i\<^sub>t = init_stakeholder_state U\<^sub>i G sk\<^sub>v\<^sub>r\<^sub>f sk\<^sub>k\<^sub>e\<^sub>s sk\<^sub>d\<^sub>s\<^sub>i\<^sub>g
     in
-      start_of_slot ni ss\<^sub>i\<^sub>n\<^sub>i\<^sub>t first_slot main_loop)"
+      \<nu> A\<^sub>m A\<^sub>s. (main_loop ni A\<^sub>m A\<^sub>s \<parallel> start_of_slot ni A\<^sub>m A\<^sub>s \<parallel> A\<^sub>s \<triangleleft> (ss\<^sub>i\<^sub>n\<^sub>i\<^sub>t, first_slot))"
 
 end
 

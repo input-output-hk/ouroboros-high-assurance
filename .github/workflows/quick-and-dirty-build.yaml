@@ -14,5 +14,10 @@ jobs:
           chapter-name: IOG
           source-path: src
           isabelle-version: 2022
-          afp-sessions: ''
-          github-sessions: ''
+          afp-sessions:
+            ZFC_in_HOL:2022-10-27
+            Finite-Map-Extras:2022-10-27
+          github-sessions:
+            input-output-hk/equivalence-reasoner:src
+            input-output-hk/transition-systems:src
+            input-output-hk/thorn-calculus:src
