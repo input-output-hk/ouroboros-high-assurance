@@ -6,7 +6,8 @@
  *)
 
 theory Chain_Sync_Mini_Protocol_Implementation
-  imports "Thorn_Calculus.Thorn_Calculus-Processes"
+  imports
+    "Thorn_Calculus.Thorn_Calculus-Processes"
 begin
 
 text \<open> Crypto \<close>
