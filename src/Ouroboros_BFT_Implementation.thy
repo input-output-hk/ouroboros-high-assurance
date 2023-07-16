@@ -1,7 +1,9 @@
 section \<open> Implementation of the Ouroboros BFT protocol \<close>
 
 theory Ouroboros_BFT_Implementation
-  imports Chi_Calculus.Typed_Basic_Transition_System "HOL-Library.BNF_Corec"
+  imports
+    Chi_Calculus.Typed_Basic_Transition_System
+    "HOL-Library.BNF_Corec"
 begin
 
 subsection \<open> Cryptographic Primitives \<close>

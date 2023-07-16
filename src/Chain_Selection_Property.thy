@@ -1,7 +1,8 @@
 section \<open> Proof of the chain selection property \<close>
 
 theory Chain_Selection_Property
-  imports Main
+  imports
+    Main
 begin
 
 subsection \<open> Introduction \<close>
