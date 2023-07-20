@@ -15,22 +15,16 @@ definition dual :: "('s\<^sub>1, 'd\<^sub>1, 's\<^sub>2, 'd\<^sub>2) situation \
   [simp]: "dual situation = \<lparr>state = sum_swap (state situation), data = prod.swap (data situation)\<rparr>"
 
 record ('s\<^sub>a, 'd\<^sub>a, 's\<^sub>p, 'd\<^sub>p, 'm) steps =
-  progression_of_active :: "'s\<^sub>a \<Rightarrow> 'd\<^sub>a \<Rightarrow> ('m \<times> 'd\<^sub>a) option"
-  progression_of_passive :: "'m \<Rightarrow> 's\<^sub>a \<Rightarrow> 'd\<^sub>p \<Rightarrow> 'd\<^sub>p"
-  progression_of_both :: "'m \<Rightarrow> 's\<^sub>a \<Rightarrow> 's\<^sub>a + 's\<^sub>p"
+  initiation :: "'s\<^sub>a \<Rightarrow> 'd\<^sub>a \<Rightarrow> ('m \<times> 'd\<^sub>a) option"
+  completion :: "'m \<Rightarrow> 's\<^sub>a \<Rightarrow> ('s\<^sub>a + 's\<^sub>p) \<times> ('d\<^sub>p \<Rightarrow> 'd\<^sub>p)"
 
 definition
   step :: "('s\<^sub>a, 'd\<^sub>a, 's\<^sub>p, 'd\<^sub>p, 'm) steps \<Rightarrow> 's\<^sub>a \<Rightarrow> 'd\<^sub>a \<times> 'd\<^sub>p \<Rightarrow> ('s\<^sub>a, 'd\<^sub>a, 's\<^sub>p, 'd\<^sub>p) situation option"
 where
-  [simp]: "step \<S> s\<^sub>a D =
+  [simp]: "step \<S> s\<^sub>a d =
     map_option
-      (\<lambda>(m, d\<^sub>a').
-        \<lparr>
-          state = progression_of_both \<S> m s\<^sub>a,
-          data = (d\<^sub>a', progression_of_passive \<S> m s\<^sub>a (snd D))
-        \<rparr>
-      )
-      (progression_of_active \<S> s\<^sub>a (fst D))"
+      (\<lambda>(m, d\<^sub>a'). let (s', D) = completion \<S> m s\<^sub>a in \<lparr>state = s', data = (d\<^sub>a', D (snd d))\<rparr>)
+      (initiation \<S> s\<^sub>a (fst d))"
 
 record ('s\<^sub>c, 'd\<^sub>c, 's\<^sub>s, 'd\<^sub>s, 'm) transitions =
   client_steps :: "('s\<^sub>c, 'd\<^sub>c, 's\<^sub>s, 'd\<^sub>s, 'm) steps"
