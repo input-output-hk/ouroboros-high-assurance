@@ -16,14 +16,14 @@ definition dual :: "('s\<^sub>1, 'd\<^sub>1, 's\<^sub>2, 'd\<^sub>2) situation \
 
 record ('s\<^sub>a, 'd\<^sub>a, 's\<^sub>p, 'd\<^sub>p, 'm) steps =
   initiation :: "'s\<^sub>a \<Rightarrow> 'd\<^sub>a \<Rightarrow> ('m \<times> 'd\<^sub>a) option"
-  completion :: "'m \<Rightarrow> 's\<^sub>a \<Rightarrow> ('s\<^sub>a + 's\<^sub>p) \<times> ('d\<^sub>p \<Rightarrow> 'd\<^sub>p)"
+  completion :: "'m \<Rightarrow> 's\<^sub>a \<rightharpoonup> ('s\<^sub>a + 's\<^sub>p) \<times> ('d\<^sub>p \<Rightarrow> 'd\<^sub>p)"
 
 definition
   step :: "('s\<^sub>a, 'd\<^sub>a, 's\<^sub>p, 'd\<^sub>p, 'm) steps \<Rightarrow> 's\<^sub>a \<Rightarrow> 'd\<^sub>a \<times> 'd\<^sub>p \<Rightarrow> ('s\<^sub>a, 'd\<^sub>a, 's\<^sub>p, 'd\<^sub>p) situation option"
 where
   [simp]: "step \<S> s\<^sub>a d =
     map_option
-      (\<lambda>(m, d\<^sub>a'). let (s', D) = completion \<S> m s\<^sub>a in \<lparr>state = s', data = (d\<^sub>a', D (snd d))\<rparr>)
+      (\<lambda>(m, d\<^sub>a'). let (s', D) = the (completion \<S> m s\<^sub>a) in \<lparr>state = s', data = (d\<^sub>a', D (snd d))\<rparr>)
       (initiation \<S> s\<^sub>a (fst d))"
 
 record ('s\<^sub>c, 'd\<^sub>c, 's\<^sub>s, 'd\<^sub>s, 'm) transitions =
