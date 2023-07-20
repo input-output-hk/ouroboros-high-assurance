@@ -159,11 +159,12 @@ where
           I \<triangleleft> (StIdle, \<C>\<^sub>n\<^sub>e\<^sub>w, read_ptr + 1, must_rollback, o_points)
         else
           let
-            rollback_point = last_common_point \<C> \<C>\<^sub>n\<^sub>e\<^sub>w
+            rollback_point = last_common_point \<C> \<C>\<^sub>n\<^sub>e\<^sub>w ;
+            new_read_ptr = index_from_slot rollback_point \<C>\<^sub>n\<^sub>e\<^sub>w + 1
           in
             PC \<triangleleft> MsgRollBackward rollback_point (tip \<C>\<^sub>n\<^sub>e\<^sub>w)
             \<parallel>
-            I \<triangleleft> (StIdle, \<C>\<^sub>n\<^sub>e\<^sub>w, rollback_point + 1, must_rollback, o_points)
+            I \<triangleleft> (StIdle, \<C>\<^sub>n\<^sub>e\<^sub>w, new_read_ptr, must_rollback, o_points)
   )"
 
 definition
