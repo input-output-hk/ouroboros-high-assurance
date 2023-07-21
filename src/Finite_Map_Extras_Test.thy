@@ -1,7 +1,8 @@
 section \<open> Extra Features for Finite Maps \<close>
 
 theory Finite_Map_Extras_Test
-  imports "HOL-Library.Finite_Map"
+  imports
+    "HOL-Library.Finite_Map"
 begin
 
 text \<open> Extra lemmas and syntactic sugar for \<open>fmap\<close> \<close>
