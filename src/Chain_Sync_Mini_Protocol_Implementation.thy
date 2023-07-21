@@ -20,33 +20,21 @@ typedecl hash
 axiomatization
 where
   hash_countability: "OFCLASS(hash, countable_class)"
+and
+  hash_linear_order: "OFCLASS(hash, linorder_class)"
 
 instance hash :: countable
   by (fact hash_countability)
 
-text \<open> Timing \<close>
-
-type_synonym slot = int
-
-abbreviation
-  genesis_slot :: slot
-where
-  "genesis_slot \<equiv> -1"
+instance hash :: linorder
+  by (fact hash_linear_order)
 
 text \<open> Blocks \<close>
 
-datatype block =
-    GenesisBlock
-  | HeaderBlock \<open>slot\<close> \<open>hash option\<close>
+datatype block = Block (hash: \<open>hash\<close>)
 
 instance block :: countable
   by countable_datatype
-
-primrec
-  block_slot :: "block \<Rightarrow> slot"
-where
-  "block_slot GenesisBlock = genesis_slot"
-| "block_slot (HeaderBlock slot _) = slot"
 
 text \<open> Chains \<close>
 
@@ -64,24 +52,14 @@ abbreviation (input)
 where
   "tip \<C> \<equiv> \<C> ! (tip_index \<C>)"
 
-abbreviation (input)
-  genesis_index :: "chain_index"
-where
-  "genesis_index \<equiv> 0"
-
 text \<open> Points \<close>
 
-type_synonym point = slot (* FIXME: Add hash *)
-
-definition
-  point_slot :: "point \<Rightarrow> slot"
-where
-  [simp]: "point_slot p = p"
+type_synonym point = hash
 
 definition
   block_point :: "block \<Rightarrow> point"
 where
-  [simp]: "block_point \<equiv> block_slot"
+  [simp]: "block_point \<equiv> hash"
 
 text \<open> State machines \<close>
 
@@ -123,16 +101,16 @@ definition
 where
   [simp]: "best_intersection_point \<C> points = (
     let
-      intersection_points = List.set points \<inter> List.set (map block_slot \<C>)
+      intersection_points = List.set points \<inter> List.set (map hash \<C>)
     in
       if intersection_points = {} then None else Some (Max intersection_points)
   )"
 
-(* NOTE: Assumes that \<exists>index \<in> {0..<length \<C>}. block_slot (\<C> ! index) = slot *)
+(* NOTE: Assumes that \<exists>index \<in> {0..<length \<C>}. hash (\<C> ! index) = h *)
 definition
-  index_from_slot :: "slot \<Rightarrow> chain \<Rightarrow> chain_index"
+  index_from_hash :: "hash \<Rightarrow> chain \<Rightarrow> chain_index"
 where
-  [simp]: "index_from_slot slot \<C> = hd [index. (block, index) \<leftarrow> zip \<C> [0..<length \<C>], block_slot block = slot]"
+  [simp]: "index_from_hash h \<C> = hd [index. (block, index) \<leftarrow> zip \<C> [0..<length \<C>], hash block = h]"
 
 (* TODO: The document seems to assume that there is always a common prefix, thus there is always a last common point. Confirm. *)
 definition
@@ -152,7 +130,7 @@ where
     let
       (_, \<C>, read_ptr, must_rollback, o_points) = pp
     in
-      if read_ptr \<in> List.set (map block_point (longest_common_prefix \<C> \<C>\<^sub>n\<^sub>e\<^sub>w))
+      if read_ptr < length (longest_common_prefix \<C> \<C>\<^sub>n\<^sub>e\<^sub>w)
         then
           PC \<triangleleft> MsgRollForward (\<C>\<^sub>n\<^sub>e\<^sub>w ! read_ptr) (tip \<C>\<^sub>n\<^sub>e\<^sub>w)
           \<parallel>
@@ -160,11 +138,11 @@ where
         else
           let
             rollback_point = last_common_point \<C> \<C>\<^sub>n\<^sub>e\<^sub>w ;
-            new_read_ptr = index_from_slot rollback_point \<C>\<^sub>n\<^sub>e\<^sub>w + 1
+            new_read_ptr = index_from_hash rollback_point \<C>\<^sub>n\<^sub>e\<^sub>w + 1
           in
             PC \<triangleleft> MsgRollBackward rollback_point (tip \<C>\<^sub>n\<^sub>e\<^sub>w)
             \<parallel>
-            I \<triangleleft> (StIdle, \<C>\<^sub>n\<^sub>e\<^sub>w, new_read_ptr, must_rollback, o_points)
+            I \<triangleleft> (StIdle, \<C>\<^sub>n\<^sub>e\<^sub>w, new_read_ptr, False, o_points)
   )"
 
 definition
@@ -201,7 +179,7 @@ where
           | Some intersection_point \<Rightarrow>
               PC \<triangleleft> MsgIntersectFound intersection_point (tip \<C>)
               \<parallel>
-              I \<triangleleft> (StIdle, \<C>, index_from_slot (point_slot intersection_point) \<C>, True, None::point list option)
+              I \<triangleleft> (StIdle, \<C>, index_from_hash intersection_point \<C>, True, None::point list option)
         )
       | StCanAwait \<Rightarrow>
           U \<triangleright> msg. (
@@ -253,7 +231,7 @@ consts candidate_points :: "chain \<Rightarrow> point list"
 definition
   rollback_to :: "chain \<Rightarrow> point \<Rightarrow> chain"
 where
-  [simp]: "rollback_to \<C> point = takeWhile (\<lambda>block. block_slot block \<le> point) \<C>"
+  [simp]: "rollback_to \<C> point = takeWhile (\<lambda>block. hash block \<le> point) \<C>"
 
 definition
   shutdown
@@ -312,7 +290,7 @@ where
       | StIdle \<Rightarrow>
           if is_init
             then
-              if \<C> = [GenesisBlock]
+              if \<C> = []
                 then \<comment> \<open>No local chain, start from genesis block\<close>
                   I \<triangleleft> (StIdle, \<C>, False)
                 else \<comment> \<open>Local chain, find intersection point\<close>
@@ -354,7 +332,7 @@ definition
 where
   "protocol CP PC U \<C>\<^sub>p \<C>\<^sub>c =
     \<nu> IC IP. (
-      producer CP PC IP U \<parallel> IP \<triangleleft> (StIdle, \<C>\<^sub>p, genesis_index + 1, False, None::block list option)
+      producer CP PC IP U \<parallel> IP \<triangleleft> (StIdle, \<C>\<^sub>p, 0, False, None::block list option)
       \<parallel>
       consumer CP PC IC \<parallel> IC \<triangleleft> (StIdle, \<C>\<^sub>c, True)
     )"
