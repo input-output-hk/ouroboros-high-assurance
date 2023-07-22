@@ -34,7 +34,8 @@ text \<open>
   the proper state~\<^term>\<open>s\<close>. However, this could quickly lead to confusion with the use of
   \<^type>\<open>option\<close> for maps, which we use in state machine descriptions. Therefore, we introduce a
   dedicated type \<open>successor\<close> that is isomorphic to \<^type>\<open>option\<close>. We use this type not only for
-  representing final \<^emph>\<open>states\<close> but also for representing other “final things”.
+  representing final \<^emph>\<open>states\<close> but also for representing other “final things”. An example are “done”
+  messages, which we want to distinguish from proper messages at the type level.
 \<close>
 
 datatype 'a successor = Done | Continuing 'a
@@ -91,11 +92,11 @@ text \<open>
 
     \<^item> \<^typ>\<open>'d\<^sub>a\<close>, for the mutable data maintained by the active party
 
+    \<^item> \<^typ>\<open>'m\<^sub>a\<close>, for the proper messages that the active party can send
+
     \<^item> \<^typ>\<open>'s\<^sub>p\<close>, for the states where the passive party has agency
 
     \<^item> \<^typ>\<open>'d\<^sub>p\<close>, for the mutable data maintained by the passive party
-
-    \<^item> \<^typ>\<open>'m\<close>, for the proper messages (all messages except the “done” message)
 
   A value of type \<open>unchecked_steps\<close> is a record that consists of two fields:
 
@@ -115,13 +116,13 @@ text \<open>
       validity precise.
 \<close>
 
-record ('s\<^sub>a, 'd\<^sub>a, 's\<^sub>p, 'd\<^sub>p, 'm) unchecked_steps =
-  initiation :: "'s\<^sub>a \<Rightarrow> 'd\<^sub>a \<Rightarrow> ('m \<times> 'd\<^sub>a) successor"
-  completion :: "'m \<Rightarrow> 's\<^sub>a \<rightharpoonup> ('s\<^sub>a + 's\<^sub>p) \<times> ('d\<^sub>p \<Rightarrow> 'd\<^sub>p)"
+record ('s\<^sub>a, 'd\<^sub>a, 'm\<^sub>a, 's\<^sub>p, 'd\<^sub>p) unchecked_steps =
+  initiation :: "'s\<^sub>a \<Rightarrow> 'd\<^sub>a \<Rightarrow> ('m\<^sub>a \<times> 'd\<^sub>a) successor"
+  completion :: "'m\<^sub>a \<Rightarrow> 's\<^sub>a \<rightharpoonup> ('s\<^sub>a + 's\<^sub>p) \<times> ('d\<^sub>p \<Rightarrow> 'd\<^sub>p)"
 
-definition unchecked_steps_are_valid :: "('s\<^sub>a, 'd\<^sub>a, 's\<^sub>p, 'd\<^sub>p, 'm) unchecked_steps \<Rightarrow> bool" where
+definition unchecked_steps_are_valid :: "('s\<^sub>a, 'd\<^sub>a, 'm\<^sub>a, 's\<^sub>p, 'd\<^sub>p) unchecked_steps \<Rightarrow> bool" where
   [simp]: "unchecked_steps_are_valid \<S> =
-    (\<forall>s\<^sub>a d\<^sub>a m d\<^sub>a'. initiation \<S> s\<^sub>a d\<^sub>a = Continuing (m, d\<^sub>a') \<longrightarrow> s\<^sub>a \<in> dom (completion \<S> m))"
+    (\<forall>s\<^sub>a d\<^sub>a m\<^sub>a d\<^sub>a'. initiation \<S> s\<^sub>a d\<^sub>a = Continuing (m\<^sub>a, d\<^sub>a') \<longrightarrow> s\<^sub>a \<in> dom (completion \<S> m\<^sub>a))"
 
 text \<open>
   The meaning of a description of steps is a function that tells for a given current state where the
@@ -134,14 +135,14 @@ text \<open>
 
 definition
   unchecked_step :: "
-    ('s\<^sub>a, 'd\<^sub>a, 's\<^sub>p, 'd\<^sub>p, 'm) unchecked_steps \<Rightarrow>
+    ('s\<^sub>a, 'd\<^sub>a, 'm\<^sub>a, 's\<^sub>p, 'd\<^sub>p) unchecked_steps \<Rightarrow>
     's\<^sub>a \<Rightarrow>
     'd\<^sub>a \<times> 'd\<^sub>p \<Rightarrow>
     ('s\<^sub>a, 'd\<^sub>a, 's\<^sub>p, 'd\<^sub>p) situation successor"
 where
   [simp]: "unchecked_step \<S> s\<^sub>a d =
     map_successor
-      (\<lambda>(m, d\<^sub>a'). let (s', D) = the (completion \<S> m s\<^sub>a) in \<lparr>state = s', data = (d\<^sub>a', D (snd d))\<rparr>)
+      (\<lambda>(m\<^sub>a, d\<^sub>a'). let (s', D) = the (completion \<S> m\<^sub>a s\<^sub>a) in \<lparr>state = s', data = (d\<^sub>a', D (snd d))\<rparr>)
       (initiation \<S> s\<^sub>a (fst d))"
 
 text \<open>
@@ -149,8 +150,8 @@ text \<open>
   \<^type>\<open>unchecked_steps\<close> comes with a validity guarantee.
 \<close>
 
-typedef ('s\<^sub>a, 'd\<^sub>a, 's\<^sub>p, 'd\<^sub>p, 'm) steps =
-  "{\<S> :: ('s\<^sub>a, 'd\<^sub>a, 's\<^sub>p, 'd\<^sub>p, 'm) unchecked_steps. unchecked_steps_are_valid \<S>}"
+typedef ('s\<^sub>a, 'd\<^sub>a, 'm\<^sub>a, 's\<^sub>p, 'd\<^sub>p) steps =
+  "{\<S> :: ('s\<^sub>a, 'd\<^sub>a, 'm\<^sub>a, 's\<^sub>p, 'd\<^sub>p) unchecked_steps. unchecked_steps_are_valid \<S>}"
 proof -
   have "unchecked_steps_are_valid \<lparr>initiation = \<lambda>_ _. Done, completion = \<lambda>_ _. None\<rparr>"
     by simp
@@ -167,7 +168,7 @@ text \<open>
 
 lift_definition
   step :: "
-    ('s\<^sub>a, 'd\<^sub>a, 's\<^sub>p, 'd\<^sub>p, 'm) steps \<Rightarrow>
+    ('s\<^sub>a, 'd\<^sub>a, 'm\<^sub>a, 's\<^sub>p, 'd\<^sub>p) steps \<Rightarrow>
     's\<^sub>a \<Rightarrow>
     'd\<^sub>a \<times> 'd\<^sub>p \<Rightarrow>
     ('s\<^sub>a, 'd\<^sub>a, 's\<^sub>p, 'd\<^sub>p) situation successor"
@@ -180,9 +181,9 @@ text \<open>
   stand for “client” and “server”, respectively.
 \<close>
 
-record ('s\<^sub>c, 'd\<^sub>c, 's\<^sub>s, 'd\<^sub>s, 'm) transitions =
-  client_steps :: "('s\<^sub>c, 'd\<^sub>c, 's\<^sub>s, 'd\<^sub>s, 'm) steps"
-  server_steps :: "('s\<^sub>s, 'd\<^sub>s, 's\<^sub>c, 'd\<^sub>c, 'm) steps"
+record ('s\<^sub>c, 'd\<^sub>c, 'm\<^sub>c, 's\<^sub>s, 'd\<^sub>s, 'm\<^sub>s) transitions =
+  client_steps :: "('s\<^sub>c, 'd\<^sub>c, 'm\<^sub>c, 's\<^sub>s, 'd\<^sub>s) steps"
+  server_steps :: "('s\<^sub>s, 'd\<^sub>s, 'm\<^sub>s, 's\<^sub>c, 'd\<^sub>c) steps"
 
 text \<open>
   The meaning of a description of transitions is a function that tells for a given situation whether
@@ -193,7 +194,7 @@ text \<open>
 
 definition
   transition :: "
-    ('s\<^sub>c, 'd\<^sub>c, 's\<^sub>s, 'd\<^sub>s, 'm) transitions \<Rightarrow>
+    ('s\<^sub>c, 'd\<^sub>c, 'm\<^sub>c, 's\<^sub>s, 'd\<^sub>s, 'm\<^sub>s) transitions \<Rightarrow>
     ('s\<^sub>c, 'd\<^sub>c, 's\<^sub>s, 'd\<^sub>s) situation \<Rightarrow>
     ('s\<^sub>c, 'd\<^sub>c, 's\<^sub>s, 'd\<^sub>s) situation successor"
 where
@@ -208,8 +209,8 @@ text \<open>
   transitions.
 \<close>
 
-record ('s\<^sub>c, 'd\<^sub>c, 's\<^sub>s, 'd\<^sub>s, 'm) state_machine =
+record ('s\<^sub>c, 'd\<^sub>c, 'm\<^sub>c, 's\<^sub>s, 'd\<^sub>s, 'm\<^sub>s) state_machine =
   initial :: "('s\<^sub>c, 'd\<^sub>c, 's\<^sub>s, 'd\<^sub>s) situation"
-  transitions :: "('s\<^sub>c, 'd\<^sub>c, 's\<^sub>s, 'd\<^sub>s, 'm) transitions"
+  transitions :: "('s\<^sub>c, 'd\<^sub>c, 'm\<^sub>c, 's\<^sub>s, 'd\<^sub>s, 'm\<^sub>s) transitions"
 
 end
