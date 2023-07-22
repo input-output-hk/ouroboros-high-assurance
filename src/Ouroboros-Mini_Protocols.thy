@@ -153,7 +153,7 @@ text \<open>
 typedef ('s\<^sub>a, 'd\<^sub>a, 'm\<^sub>a, 's\<^sub>p, 'd\<^sub>p) steps =
   "{\<S> :: ('s\<^sub>a, 'd\<^sub>a, 'm\<^sub>a, 's\<^sub>p, 'd\<^sub>p) unchecked_steps. unchecked_steps_are_valid \<S>}"
 proof -
-  have "unchecked_steps_are_valid \<lparr>initiation = \<lambda>_ _. Done, completion = \<lambda>_ _. None\<rparr>"
+  have "unchecked_steps_are_valid \<lparr>initiation = \<lambda>_ _. Done, completion = undefined\<rparr>"
     by simp
   then show ?thesis
     by blast
