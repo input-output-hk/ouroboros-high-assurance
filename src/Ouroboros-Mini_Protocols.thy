@@ -233,7 +233,7 @@ text \<open>
 locale protocol_possibilities =
   fixes client_possibilities :: "'m possibilities"
   fixes server_possibilities :: "'m possibilities"
-  defines [simp]:
+  defines server_possibilities_derivation [simp]:
     "server_possibilities \<equiv> client_possibilities\<^sup>\<bottom>"
 
 text \<open>
@@ -244,7 +244,7 @@ text \<open>
 locale protocol_state_machines =
   fixes client_state_machine :: "('s, 'm) state_machine"
   fixes server_state_machine :: "('s, 'm) state_machine"
-  defines [simp]:
+  defines server_state_machine_derivation [simp]:
     "server_state_machine \<equiv> client_state_machine\<^sup>\<bottom>"
 begin
 
@@ -258,7 +258,7 @@ sublocale protocol_possibilities \<open>client_possibilities\<close> \<open>serv
   unfolding
     client_possibilities_def and server_possibilities_def
   and
-    server_state_machine_def and state_machine_semantics_preserves_dualization .
+    server_state_machine_derivation and state_machine_semantics_preserves_dualization .
 
 end
 
