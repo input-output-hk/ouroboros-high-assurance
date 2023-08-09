@@ -61,6 +61,12 @@ codatatype 'm possibilities =
   Possibilities (agent: \<open>party\<close>) (can_finish: \<open>bool\<close>) (next_possibilities: \<open>'m \<rightharpoonup> 'm possibilities\<close>)
 
 text \<open>
+  Note that besides the additional \<^const>\<open>agent\<close> field, the \<^type>\<open>possibilities\<close> type
+  corresponds exactly to the \<open>language\<close> type introduced in Subsection~2.2 of the \<^emph>\<open>corec\<close>
+  tutorial.
+\<close>
+
+text \<open>
   Possibilities always denote a situation where at least one message will still be transmitted. The
   \<^const>\<open>can_finish\<close> field being \<^const>\<open>True\<close> signals that it is possible for a “done” message
   to be transmitted next.
