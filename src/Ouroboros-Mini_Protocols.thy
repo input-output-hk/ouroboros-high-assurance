@@ -233,38 +233,42 @@ subsection \<open>Protocols\<close>
 
 text \<open>
   The communication patterns that a protocol permits are characterized by the possibilities of the
-  client and the server, where the latter have to be the dual of the former.
+  client and the server, where the latter can be derived from the former via dualization.
 \<close>
 
 locale protocol_possibilities =
   fixes client_possibilities :: "'m possibilities"
-  fixes server_possibilities :: "'m possibilities"
-  defines server_possibilities_derivation [simp]:
-    "server_possibilities \<equiv> client_possibilities\<^sup>\<bottom>"
+begin
+
+definition server_possibilities :: "'m possibilities" where
+  [simp]: "server_possibilities = client_possibilities\<^sup>\<bottom>"
+
+end
 
 text \<open>
-  The permitted communication patterns of a protocol can be specified using state machines, from
-  which corresponding possibilities can be derived via the state machine semantics.
+  The possibilities that characterize permitted communication patterns can be described using state
+  machines. A state machine for the client is sufficient for specifying the communication patterns
+  that a protocol permits, since the state machine for the server can be derived from it via
+  dualization.
 \<close>
 
 locale protocol_state_machines =
   fixes client_state_machine :: "('s, 'm) state_machine"
-  fixes server_state_machine :: "('s, 'm) state_machine"
-  defines server_state_machine_derivation [simp]:
-    "server_state_machine \<equiv> client_state_machine\<^sup>\<bottom>"
 begin
+
+definition server_state_machine :: "('s, 'm) state_machine" where
+  [simp]: "server_state_machine = client_state_machine\<^sup>\<bottom>"
 
 definition client_possibilities :: "'m possibilities" where
   [simp]: "client_possibilities = \<lbrakk>client_state_machine\<rbrakk>"
 
-definition server_possibilities :: "'m possibilities" where
-  [simp]: "server_possibilities = \<lbrakk>server_state_machine\<rbrakk>"
+sublocale protocol_possibilities \<open>client_possibilities\<close> .
 
-sublocale protocol_possibilities \<open>client_possibilities\<close> \<open>server_possibilities\<close>
-  unfolding
-    client_possibilities_def and server_possibilities_def
-  and
-    server_state_machine_derivation and state_machine_semantics_preserves_dualization .
+lemma server_possibilities_from_state_machine:
+  shows "server_possibilities = \<lbrakk>server_state_machine\<rbrakk>"
+  unfolding server_possibilities_def and server_state_machine_def
+  unfolding client_possibilities_def
+  using state_machine_semantics_preserves_dualization [symmetric] .
 
 end
 
@@ -273,7 +277,8 @@ text \<open>
   possibilities of the protocol.
 \<close>
 
-locale protocol_programs = protocol_possibilities +
+locale protocol_programs =
+  protocol_possibilities \<open>client_possibilities\<close> for client_possibilities :: "'m possibilities" +
   fixes client_program :: "('m or_done, 'a) program"
   fixes server_program :: "('m or_done, 'b) program"
   assumes client_conformance:
