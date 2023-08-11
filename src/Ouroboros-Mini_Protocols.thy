@@ -287,6 +287,97 @@ locale protocol_programs =
   assumes server_conformance:
     "server_program \<Colon> Cont server_possibilities"
 
+subsection \<open>Coinduction Up to Embedding\<close>
+
+text \<open>
+  Conformance of programs can be proved by a technique that we call “coinduction up to embedding”.
+  This technique is similar to coinduction up to context; the differences are as follows:
+
+    \<^item> With coinduction up to context, there must be exactly one pair of holes into which the terms
+      related by the base relation are plugged; with coinduction up to embedding, there can be an
+      arbitrary number of such pairs of holes (even infinitely many are allowed).
+
+    \<^item> Coinduction up to context only works with contexts of finite depth; coinduction up to
+      embedding also works with infinitely deep term fragments around the terms related by the base
+      relation.
+\<close>
+
+text \<open>
+  We introduce an endofunction on relations that captures the “up to embedding” principle and a
+  variant of it that excludes the possibility of having just holes with nothing around them.
+\<close>
+
+coinductive
+  up_to_embedding :: "
+    (('m or_done, 'r) program \<Rightarrow> 'm possibilities or_done \<Rightarrow> bool) \<Rightarrow>
+    (('m or_done, 'r) program \<Rightarrow> 'm possibilities or_done \<Rightarrow> bool)"
+and
+  up_to_actual_embedding :: "
+    (('m or_done, 'r) program \<Rightarrow> 'm possibilities or_done \<Rightarrow> bool) \<Rightarrow>
+    (('m or_done, 'r) program \<Rightarrow> 'm possibilities or_done \<Rightarrow> bool)"
+for
+  R :: "('m or_done, 'r) program \<Rightarrow> 'm possibilities or_done \<Rightarrow> bool"
+where
+  up_to_no_actual_embedding:
+    "up_to_embedding R \<Pi> \<P>"
+      if "R \<Pi> \<P>" |
+  up_to_actual_embedding:
+    "up_to_embedding R \<Pi> \<P>"
+      if "up_to_actual_embedding R \<Pi> \<P>" |
+  up_to_done_embedding:
+    "up_to_actual_embedding R (\<triangle> _) Done" |
+  up_to_send_embedding:
+    "up_to_actual_embedding R (\<up> M; \<Pi>) (Cont P)"
+      if
+        "agent P = Us"
+      and
+        "P \<turnstile> M"
+      and
+        "up_to_embedding R \<Pi> (follow_up P M)" |
+  up_to_receive_embedding:
+    "up_to_actual_embedding R (\<down> M; \<Xi> M) (Cont P)"
+      if
+        "agent P = Them"
+      and
+        "dom \<Xi> = {M. P \<turnstile> M}"
+      and
+        "\<forall>M \<in> dom \<Xi>. up_to_embedding R (the (\<Xi> M)) (follow_up P M)"
+
+text \<open>
+  Coinduction up to embedding is sound.
+\<close>
+
+lemma up_to_embedding_is_sound [case_names bisimulation]:
+  assumes "R \<Pi> \<P>" and "\<And>\<Pi> \<P>. R \<Pi> \<P> \<Longrightarrow> up_to_actual_embedding R \<Pi> \<P>"
+  shows "\<Pi> \<Colon> \<P>"
+proof -
+  from \<open>R \<Pi> \<P>\<close> have \<open>up_to_embedding R \<Pi> \<P>\<close>
+    by (rule up_to_no_actual_embedding)
+  then show ?thesis
+  proof (coinduction arbitrary: \<Pi> \<P>)
+    case conforms_to
+    from \<open>up_to_embedding R \<Pi> \<P>\<close> have "up_to_actual_embedding R \<Pi> \<P>"
+    proof cases
+      case up_to_no_actual_embedding
+      with assms(2) show ?thesis .
+    next
+      case up_to_actual_embedding
+      then show ?thesis .
+    qed
+    then show ?case
+      by cases simp_all
+  qed
+qed
+
+text \<open>
+  Note that the use of \<^const>\<open>up_to_actual_embedding\<close> in the bisimulation assumption captures two
+  things:
+
+    \<^item> Both terms must make corresponding steps.
+
+    \<^item> The target terms are related by \<^term>\<open>up_to_embedding R\<close>.
+\<close>
+
 subsection \<open>Utilities\<close>
 
 text \<open>
