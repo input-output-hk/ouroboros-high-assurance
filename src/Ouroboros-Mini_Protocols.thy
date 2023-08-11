@@ -100,6 +100,20 @@ text \<open>
 definition follow_up :: "'m possibilities \<Rightarrow> 'm or_done \<Rightarrow> 'm possibilities or_done" where
   [simp]: "follow_up P M = map_or_done (the \<circ> next_possibilities P) M" if "P \<turnstile> M"
 
+text \<open>
+  The communication patterns that a protocol permits are characterized by the possibilities of the
+  client and the server, where the latter can be derived from the former via dualization.
+\<close>
+
+locale protocol_possibilities =
+  fixes client_possibilities :: "'m possibilities"
+begin
+
+definition server_possibilities :: "'m possibilities" where
+  [simp]: "server_possibilities = client_possibilities\<^sup>\<bottom>"
+
+end
+
 subsection \<open>State Machines\<close>
 
 text \<open>
@@ -176,6 +190,33 @@ proof (coinduction arbitrary: S)
     by blast
 qed
 
+text \<open>
+  The possibilities that characterize the communication patterns that a protocol permits can be
+  described using state machines. A state machine for the client is sufficient for specifying the
+  permitted communication patterns, since the state machine for the server can be derived from it
+  via dualization.
+\<close>
+
+locale protocol_state_machines =
+  fixes client_state_machine :: "('s, 'm) state_machine"
+begin
+
+definition server_state_machine :: "('s, 'm) state_machine" where
+  [simp]: "server_state_machine = client_state_machine\<^sup>\<bottom>"
+
+definition client_possibilities :: "'m possibilities" where
+  [simp]: "client_possibilities = \<lbrakk>client_state_machine\<rbrakk>"
+
+sublocale protocol_possibilities \<open>client_possibilities\<close> .
+
+lemma server_possibilities_from_state_machine:
+  shows "server_possibilities = \<lbrakk>server_state_machine\<rbrakk>"
+  unfolding server_possibilities_def and server_state_machine_def
+  unfolding client_possibilities_def
+  using state_machine_semantics_preserves_dualization [symmetric] .
+
+end
+
 subsection \<open>Programs\<close>
 
 text \<open>
@@ -228,49 +269,6 @@ where
     if "agent P = Us" and "P \<turnstile> M" and "\<Pi> \<Colon> follow_up P M" |
   "\<down> M; \<Xi> M \<Colon> Cont P"
     if "agent P = Them" and "dom \<Xi> = {M. P \<turnstile> M}" and "\<forall>M \<in> dom \<Xi>. the (\<Xi> M) \<Colon> follow_up P M"
-
-subsection \<open>Protocols\<close>
-
-text \<open>
-  The communication patterns that a protocol permits are characterized by the possibilities of the
-  client and the server, where the latter can be derived from the former via dualization.
-\<close>
-
-locale protocol_possibilities =
-  fixes client_possibilities :: "'m possibilities"
-begin
-
-definition server_possibilities :: "'m possibilities" where
-  [simp]: "server_possibilities = client_possibilities\<^sup>\<bottom>"
-
-end
-
-text \<open>
-  The possibilities that characterize permitted communication patterns can be described using state
-  machines. A state machine for the client is sufficient for specifying the communication patterns
-  that a protocol permits, since the state machine for the server can be derived from it via
-  dualization.
-\<close>
-
-locale protocol_state_machines =
-  fixes client_state_machine :: "('s, 'm) state_machine"
-begin
-
-definition server_state_machine :: "('s, 'm) state_machine" where
-  [simp]: "server_state_machine = client_state_machine\<^sup>\<bottom>"
-
-definition client_possibilities :: "'m possibilities" where
-  [simp]: "client_possibilities = \<lbrakk>client_state_machine\<rbrakk>"
-
-sublocale protocol_possibilities \<open>client_possibilities\<close> .
-
-lemma server_possibilities_from_state_machine:
-  shows "server_possibilities = \<lbrakk>server_state_machine\<rbrakk>"
-  unfolding server_possibilities_def and server_state_machine_def
-  unfolding client_possibilities_def
-  using state_machine_semantics_preserves_dualization [symmetric] .
-
-end
 
 text \<open>
   A protocol implementation consists of a client and a server program that conform to the
