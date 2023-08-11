@@ -279,8 +279,8 @@ text \<open>
 
 locale protocol_programs =
   protocol_possibilities \<open>client_possibilities\<close> for client_possibilities :: "'m possibilities" +
-  fixes client_program :: "('m or_done, 'a) program"
-  fixes server_program :: "('m or_done, 'b) program"
+  fixes client_program :: "('m or_done, 'r\<^sub>c) program"
+  fixes server_program :: "('m or_done, 'r\<^sub>s) program"
   assumes client_conformance:
     "client_program \<Colon> Cont client_possibilities"
   assumes server_conformance:
