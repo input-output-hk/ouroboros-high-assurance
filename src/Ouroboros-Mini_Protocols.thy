@@ -264,11 +264,14 @@ coinductive
   conforms_to :: "('m or_done, 'r) program \<Rightarrow> 'm possibilities or_done \<Rightarrow> bool"
   (infix \<open>\<Colon>\<close> 50)
 where
-  "\<triangle> _ \<Colon> Done" |
-  "\<up> M; \<Pi> \<Colon> Cont P"
-    if "agent P = Us" and "P \<turnstile> M" and "\<Pi> \<Colon> follow_up P M" |
-  "\<down> M; \<Xi> M \<Colon> Cont P"
-    if "agent P = Them" and "dom \<Xi> = {M. P \<turnstile> M}" and "\<forall>M \<in> dom \<Xi>. the (\<Xi> M) \<Colon> follow_up P M"
+  return_conformance:
+    "\<triangle> _ \<Colon> Done" |
+  send_conformance:
+    "\<up> M; \<Pi> \<Colon> Cont P"
+      if "agent P = Us" and "P \<turnstile> M" and "\<Pi> \<Colon> follow_up P M" |
+  receive_conformance:
+    "\<down> M; \<Xi> M \<Colon> Cont P"
+      if "agent P = Them" and "dom \<Xi> = {M. P \<turnstile> M}" and "\<forall>M \<in> dom \<Xi>. the (\<Xi> M) \<Colon> follow_up P M"
 
 text \<open>
   A protocol implementation consists of a client and a server program that conform to the
