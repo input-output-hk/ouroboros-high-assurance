@@ -436,8 +436,10 @@ text \<open>
 
     \<^item> The implementation must contain a default case where it returns \<^const>\<open>None\<close>.
 
-  To avoid these issues, we introduce the \<open>partial_case\<close> construct, which basically works like
-  \<open>case\<close> but adds the \<^const>\<open>Some\<close> wrapping and the \<^const>\<open>None\<close> case on the fly.
+  To avoid these issues, we introduce the \<open>partial_case\<close> construct, which allows users to leave out
+  the \<^const>\<open>Some\<close> wrapping and the \<^const>\<open>None\<close> case. Under the hood, \<open>partial_case\<close>
+  expressions are just turned into \<open>case\<close> expressions via syntax translations and can therefore be
+  handled like \<open>case\<close> expressions when it comes to proofs.
 \<close>
 
 nonterminal partial_case_clauses and partial_case_clause
