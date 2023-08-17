@@ -428,8 +428,8 @@ subsection \<open>Utilities\<close>
 
 text \<open>
   When defining concrete possibilities, state machines, and programs, one often has to construct
-  partial functions that perform top-level case distinctions on message arguments. Implementing
-  such a partial function in a straightforward manner has the following issues:
+  partial functions that perform top-level case distinction on message arguments. Implementing such
+  a partial function in a straightforward manner has the following issues:
 
     \<^item> For each case where the partial function has a result, the implementation has to wrap this
       result with \<^const>\<open>Some\<close>.
