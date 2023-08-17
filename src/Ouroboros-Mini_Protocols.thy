@@ -9,6 +9,7 @@ text \<open>
 theory "Ouroboros-Mini_Protocols"
   imports
     Main
+    "HOL-Eisbach.Eisbach"
 begin
 
 subsection \<open>Parties\<close>
@@ -380,6 +381,48 @@ text \<open>
 
     \<^item> The target terms are related by \<^term>\<open>up_to_embedding R\<close>.
 \<close>
+
+subsubsection \<open>Automatic Construction of Bisimulation Proofs\<close>
+
+text \<open>
+  As indicated above, the initial step of proving program conformance is typically invoking the
+  @{method coinduction} method with the \<^theory_text>\<open>up_to_embedding_is_sound\<close> rule. This leaves the user with
+  the task of proving a bisimulation up to embedding. Manually proving such a bisimulation property
+  can be tedious. We introduce a proof method that performs this task fully automatically in the
+  situation where the possibilities are specified as the meaning of a state machine.
+
+  The syntax for invoking said proof method is as follows:
+  \<^rail>\<open>'state_machine_bisimulation' \<newline> 'program_expansion:' thm ('case_splits:' thms)?\<close>
+  The \<^theory_text>\<open>program_expansion\<close> parameter specifies the fixed-point equation that defines the program. If
+  the specification of the program or the state machine contains \<open>case\<close> expressions, the split rules
+  corresponding to such \<open>case\<close> expressions should be passed as the \<^theory_text>\<open>case_splits\<close> parameter. For a
+  \<open>case\<close> expression with a scrutinee of a type~\<open>t\<close>, the corresponding split rules are typically
+  called \<^theory_text>\<open>t.splits\<close>.
+
+  Both the program and the state machine should be specified in a rather straightforward way;
+  generating programs or state machines via some advanced meta-programming is likely to cause
+  problems. Using self-defined constants to better structure specifications is possible though, but
+  simplification rules for such constants must be made part of the simpset in order for the prover
+  to cope with these constants.
+
+  The \<^theory_text>\<open>state_machine_bisimulation\<close> method also takes the definitions of
+  \<^const>\<open>protocol_state_machines.client_possibilities\<close> and
+  \<^const>\<open>protocol_possibilities.server_possibilities\<close> into account, which frees the user from
+  manually initiating the unfolding of these constants when interpreting
+  \<^locale>\<open>protocol_programs\<close> in the presence of a \<^locale>\<open>protocol_state_machines\<close>
+  interpretation.
+\<close>
+
+method state_machine_bisimulation uses program_expansion case_splits = (
+  subst (2) program_expansion,
+  fastforce
+    simp add:
+      protocol_state_machines.client_possibilities_def
+      protocol_possibilities.server_possibilities_def
+      domIff
+    split: case_splits
+    intro: up_to_embedding_up_to_actual_embedding.intros
+)
 
 subsection \<open>Utilities\<close>
 
