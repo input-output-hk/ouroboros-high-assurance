@@ -302,6 +302,8 @@ text \<open>
       relation.
 \<close>
 
+subsubsection \<open>The Proof Principle\<close>
+
 text \<open>
   We introduce an endofunction on relations that captures the “up to embedding” notion and a variant
   of it that excludes the possibility of having just holes with nothing around them.
