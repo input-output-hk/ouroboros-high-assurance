@@ -303,8 +303,8 @@ text \<open>
 \<close>
 
 text \<open>
-  We introduce an endofunction on relations that captures the “up to embedding” principle and a
-  variant of it that excludes the possibility of having just holes with nothing around them.
+  We introduce an endofunction on relations that captures the “up to embedding” notion and a variant
+  of it that excludes the possibility of having just holes with nothing around them.
 \<close>
 
 coinductive
@@ -344,7 +344,8 @@ where
         "\<forall>M \<in> dom \<Xi>. up_to_embedding R (the (\<Xi> M)) (follow_up P M)"
 
 text \<open>
-  Coinduction up to embedding is sound.
+  Coinduction up to embedding is sound. The following lemma not only states this soundness but also
+  serves as a coinduction rule intended to be used with the @{method coinduction} proof method.
 \<close>
 
 lemma up_to_embedding_is_sound [case_names bisimulation]:
