@@ -424,7 +424,7 @@ method state_machine_bisimulation uses program_expansion case_splits = (
     intro: up_to_embedding_up_to_actual_embedding.intros
 )
 
-subsection \<open>Utilities\<close>
+subsection \<open>Case Distinction and Partiality\<close>
 
 text \<open>
   When defining concrete possibilities, state machines, and programs, one often has to construct
