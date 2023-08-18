@@ -65,9 +65,7 @@ text \<open>
   Note that besides the additional \<^const>\<open>agent\<close> field, the \<^type>\<open>possibilities\<close> type
   corresponds exactly to the \<open>language\<close> type introduced in Subsection~2.2 of the \<^emph>\<open>corec\<close>
   tutorial.
-\<close>
 
-text \<open>
   Possibilities always denote a situation where at least one message will still be transmitted. The
   \<^const>\<open>can_finish\<close> field being \<^const>\<open>True\<close> signals that it is possible for a “done” message
   to be transmitted next.
@@ -146,8 +144,8 @@ where
   [simp]: "S\<^sup>\<bottom> = S \<lparr>agent_in_state := other_party \<circ> agent_in_state S\<rparr>"
 
 text \<open>
-  We define as the meaning of a state machine the possibilities corresponding to it. This means that
-  the essence of our state machine semantics is forgetting about states.
+  We define as the meaning of a state machine the possibilities corresponding to it. As a result, we
+  obtain a state machine semantics whose essence is forgetting about states.
 \<close>
 
 primcorec state_machine_semantics :: "('s, 'm) state_machine \<Rightarrow> 'm possibilities" (\<open>\<lbrakk>_\<rbrakk>\<close>) where
@@ -249,10 +247,13 @@ text \<open>
       Send \<open>'m or_done\<close> \<open>('m, 'r) program\<close> (\<open>\<up> _;/ _\<close> [0, 55] 55) |
       Receive \<open>'m or_done \<rightharpoonup> ('m, 'r) program\<close>
   \<close>
-  However, the construction of concrete programs will typically use the \<^emph>\<open>corec\<close> package, which
-  apparently cannot cope with this definition at present. The relevant issues are being discussed in
-  the mailing list thread that starts at
-  \<^url>\<open>https://lists.cam.ac.uk/sympa/arc/cl-isabelle-users/2023-08/msg00000.html\<close>.
+  However, the construction of concrete programs will typically use the \<^emph>\<open>corec\<close> package, which in
+  Isabelle2022 cannot cope with this definition. The relevant issues are being discussed in the
+  mailing list thread that starts at
+  \<^url>\<open>https://lists.cam.ac.uk/sympa/arc/cl-isabelle-users/2023-08/msg00000.html\<close>. These issues should
+  be resolved in Isabelle2023. Once Isabelle2023 is released, we shall improve the definition of the
+  \<^type>\<open>program\<close> type accordingly. See
+  \<^url>\<open>https://github.com/input-output-hk/ouroboros-high-assurance/issues/59\<close>.
 \<close>
 
 text \<open>
@@ -374,12 +375,12 @@ proof -
 qed
 
 text \<open>
-  Note that the use of \<^const>\<open>up_to_actual_embedding\<close> in the bisimulation assumption captures two
-  things:
+  Note that the use of \<^const>\<open>up_to_actual_embedding\<close> in the bisimulation statement that is the
+  second assumption of \<^theory_text>\<open>up_to_embedding_is_sound\<close> captures two things:
 
-    \<^item> Both terms must make corresponding steps.
+    \<^item> Both terms make corresponding steps.
 
-    \<^item> The target terms are related by \<^term>\<open>up_to_embedding R\<close>.
+    \<^item> The target terms of these steps are related by \<^term>\<open>up_to_embedding R\<close>.
 \<close>
 
 subsubsection \<open>Automatic Construction of Bisimulation Proofs\<close>
@@ -400,8 +401,8 @@ text \<open>
   called \<^theory_text>\<open>t.splits\<close>.
 
   Both the program and the state machine should be specified in a rather straightforward way;
-  generating programs or state machines via some advanced meta-programming is likely to cause
-  problems. Using self-defined constants to better structure specifications is possible though, but
+  generating programs or state machines via some sort of advanced meta-programming is likely to
+  cause problems. Using self-defined constants to better structure specifications is possible, but
   simplification rules for such constants must be made part of the simpset in order for the prover
   to cope with these constants.
 
@@ -427,7 +428,7 @@ method state_machine_bisimulation uses program_expansion case_splits = (
 subsection \<open>Case Distinction and Partiality\<close>
 
 text \<open>
-  When defining concrete possibilities, state machines, and programs, one often has to construct
+  When defining concrete possibilities, state machines, or programs, one often has to construct
   partial functions that perform top-level case distinction on message arguments. Implementing such
   a partial function in a straightforward manner has the following issues:
 
@@ -438,8 +439,8 @@ text \<open>
 
   To avoid these issues, we introduce the \<open>partial_case\<close> construct, which allows users to leave out
   the \<^const>\<open>Some\<close> wrapping and the \<^const>\<open>None\<close> case. Under the hood, \<open>partial_case\<close>
-  expressions are just turned into \<open>case\<close> expressions via syntax translations and can therefore be
-  handled like \<open>case\<close> expressions when it comes to proofs.
+  expressions are just turned into \<open>case\<close> expressions via syntax translations, and therefore they
+  can be handled like \<open>case\<close> expressions when it comes to proofs.
 \<close>
 
 nonterminal partial_case_clauses and partial_case_clause
