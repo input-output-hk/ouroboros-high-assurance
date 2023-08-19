@@ -173,7 +173,7 @@ proof (coinduction arbitrary: S)
       (next_possibilities \<lbrakk>S\<^sup>\<bottom>\<rbrakk> m)
       (next_possibilities \<lbrakk>S\<rbrakk>\<^sup>\<bottom> m)"
     for m
-  proof (cases "next_state S (initial_state S) m")
+  proof (cases \<open>next_state S (initial_state S) m\<close>)
     case None
     then show ?thesis
       by simp
@@ -181,7 +181,7 @@ proof (coinduction arbitrary: S)
     case (Some s)
     define S' where "S' = S \<lparr>initial_state := s\<rparr>"
     with Some have "next_possibilities \<lbrakk>S\<^sup>\<bottom>\<rbrakk> m = Some \<lbrakk>S'\<^sup>\<bottom>\<rbrakk>" and "next_possibilities \<lbrakk>S\<rbrakk>\<^sup>\<bottom> m = Some \<lbrakk>S'\<rbrakk>\<^sup>\<bottom>"
-      by (cases S, simp_all)
+      by (cases \<open>S\<close>, simp_all)
     then show ?thesis
       by (auto simp only: option.simps)
   qed
