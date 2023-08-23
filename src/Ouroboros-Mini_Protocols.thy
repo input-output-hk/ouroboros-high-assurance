@@ -393,12 +393,12 @@ text \<open>
   situation where the possibilities are specified as the meaning of a state machine.
 
   The syntax for invoking said proof method is as follows:
-  \<^rail>\<open>'state_machine_bisimulation' \<newline> 'program_expansion:' thm ('case_splits:' thms)?\<close>
+  \<^rail>\<open>'state_machine_bisimulation' \<newline> 'program_expansion:' thm ('extra_splits:' thms)?\<close>
   The \<^theory_text>\<open>program_expansion\<close> parameter specifies the fixed-point equation that defines the program. If
-  the specification of the program or the state machine contains \<open>case\<close> expressions, the split rules
-  corresponding to such \<open>case\<close> expressions should be passed as the \<^theory_text>\<open>case_splits\<close> parameter. For a
-  \<open>case\<close> expression with a scrutinee of a type~\<open>t\<close>, the corresponding split rules are typically
-  called \<^theory_text>\<open>t.splits\<close>.
+  the specification of the program or the state machine uses \<open>case\<close> or \<open>let\<close> expressions that
+  involve pattern matching, the \<open>case\<close> split rules for all types for which pattern matching is
+  performed should be passed as the \<^theory_text>\<open>extra_splits\<close> parameter. For a type~\<open>t\<close>, the corresponding
+  rules are typically called \<^theory_text>\<open>t.splits\<close>.
 
   Both the program and the state machine should be specified in a rather straightforward way;
   generating programs or state machines via some sort of advanced meta-programming is likely to
@@ -414,14 +414,14 @@ text \<open>
   interpretation.
 \<close>
 
-method state_machine_bisimulation uses program_expansion case_splits = (
+method state_machine_bisimulation uses program_expansion extra_splits = (
   subst (2) program_expansion,
   fastforce
     simp add:
       protocol_state_machines.client_possibilities_def
       protocol_possibilities.server_possibilities_def
       domIff
-    split: case_splits
+    split: extra_splits
     intro: up_to_embedding_up_to_actual_embedding.intros
 )
 
