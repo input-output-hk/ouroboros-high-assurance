@@ -4,6 +4,7 @@ session Ouroboros = HOL +
   description
     \<open>High-assurance implementation of the Ouroboros protocol family.\<close>
   sessions
+    "HOL-Eisbach"
     "HOL-Library"
     "Finite-Map-Extras"
     "Thorn_Calculus"
