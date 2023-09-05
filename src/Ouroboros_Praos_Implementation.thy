@@ -4,6 +4,7 @@ theory Ouroboros_Praos_Implementation
   imports
     "HOL-Library.BNF_Corec"
     "HOL-Library.Sublist"
+    "HOL-Library.FSet"
     "Finite_Map_Extras_Test"
     "Thorn_Calculus.Thorn_Calculus-Processes"
     Complex_Main
@@ -674,17 +675,17 @@ where
       drop (length hlcp) \<C>)"
 
 text \<open>
-  Also, we can compute the list of the longest chains in a given list of chains \<open>\<CC>\<close>:
+  Also, we can compute the set of the longest chains in a given set of chains \<open>\<CC>\<close>:
 \<close>
 
-abbreviation (input) "is_longest_chain \<C> \<CC> \<equiv> \<forall>\<C>' \<in> set \<CC>. length \<C> \<ge> length \<C>'"
+abbreviation (input) "is_longest_chain \<C> \<CC> \<equiv> \<forall>\<C>'. \<C>' |\<in>| \<CC> \<longrightarrow> length \<C> \<ge> length \<C>'"
 
 definition
   longest_chains :: "
-    ('hash, 'vrf\<^sub>y, 'vrf\<^sub>\<pi>, 'sig) chain list \<Rightarrow>
-    ('hash, 'vrf\<^sub>y, 'vrf\<^sub>\<pi>, 'sig) chain list"
+    ('hash, 'vrf\<^sub>y, 'vrf\<^sub>\<pi>, 'sig) chain fset \<Rightarrow>
+    ('hash, 'vrf\<^sub>y, 'vrf\<^sub>\<pi>, 'sig) chain fset"
 where
-  "longest_chains \<CC> = [\<C> \<leftarrow> \<CC>. is_longest_chain \<C> \<CC>]"
+  "longest_chains \<CC> = ffilter (\<lambda>\<C>. is_longest_chain \<C> \<CC>) \<CC>"
 
 text \<open>
   Now we can define the function that implements the `longest chain' rule, namely the
@@ -694,15 +695,15 @@ text \<open>
 fun
   max_valid :: "
     ('hash, 'vrf\<^sub>y, 'vrf\<^sub>\<pi>, 'sig) chain \<Rightarrow>
-    ('hash, 'vrf\<^sub>y, 'vrf\<^sub>\<pi>, 'sig) chain list \<Rightarrow>
+    ('hash, 'vrf\<^sub>y, 'vrf\<^sub>\<pi>, 'sig) chain fset \<Rightarrow>
     ('hash, 'vrf\<^sub>y, 'vrf\<^sub>\<pi>, 'sig) chain"
 where
   "max_valid \<C> \<CC> = (
     let
-      \<CC>' = [\<C>' \<leftarrow> \<C> # \<CC>. forks_at_most k \<C> \<C>']; \<comment> \<open>the \<open>k\<close> parameter\<close>
+      \<CC>' = ffilter (forks_at_most k \<C>) ({|\<C>|} |\<union>| \<CC>); \<comment> \<open>the \<open>k\<close> parameter\<close>
       \<CC>'' = longest_chains \<CC>'
     in
-      if \<C> \<in> set \<CC>'' then \<C> else hd \<CC>'')"
+      if \<C> |\<in>| \<CC>'' then \<C> else SOME \<C>'. \<C>' |\<in>| \<CC>'')"
 
 end
 
@@ -781,7 +782,7 @@ record ('skey, 'vkey, 'hash, 'vrf\<^sub>y, 'vrf\<^sub>\<pi>, 'sig, 'nonce) stake
   ss_G :: "('vkey, 'nonce) genesis" \<comment> \<open> genesis block \<close>
   ss_\<C> :: "('hash, 'vrf\<^sub>y, 'vrf\<^sub>\<pi>, 'sig) chain" \<comment> \<open> current chain \<close>
   ss_\<eta> :: 'nonce \<comment> \<open> current epoch nonce \<open>\<eta>\<^sub>j\<close> \<close>
-  ss_\<CC> :: "('hash, 'vrf\<^sub>y, 'vrf\<^sub>\<pi>, 'sig) chain list" \<comment> \<open> chains received during the current slot \<close>
+  ss_\<CC> :: "('hash, 'vrf\<^sub>y, 'vrf\<^sub>\<pi>, 'sig) chain fset" \<comment> \<open> chains received during the current slot \<close>
   ss_txs :: "'sig transaction list" \<comment> \<open> transactions received during the current slot \<close>
   ss_st :: "'hash option" \<comment> \<open> current state, namely the hash of the head of \<open>ss_\<C>\<close> \<close>
   ss_sk\<^sub>v\<^sub>r\<^sub>f :: 'skey \<comment> \<open> secret key for \<open>\<F>\<close>$_{\mathsf{VRF}}$ \<close>
@@ -935,7 +936,7 @@ where
         ss_G = G,
         ss_\<C> = [],
         ss_\<eta> = \<eta>\<^sub>0,
-        ss_\<CC> = [],
+        ss_\<CC> = {||} ,
         ss_txs = [],
         ss_st = None,
         ss_sk\<^sub>v\<^sub>r\<^sub>f = sk\<^sub>v\<^sub>r\<^sub>f,
@@ -1027,7 +1028,7 @@ where
       if
         verify_chain \<C>\<^sub>p (ss_G ss) (ss_\<eta> ss)
       then
-        ss\<lparr>ss_\<CC> := \<C>\<^sub>p # ss_\<CC> ss\<rparr>
+        ss\<lparr>ss_\<CC> := {|\<C>\<^sub>p|} |\<union>| ss_\<CC> ss\<rparr>
       else
         ss)"
 
@@ -1064,7 +1065,7 @@ where
       ss\<lparr>
           ss_\<C> := \<C>\<^sub>m\<^sub>a\<^sub>x,
           ss_st := Some (\<H>\<^sub>B (last \<C>\<^sub>m\<^sub>a\<^sub>x)), \<comment> \<open> update `state' with hash of best chain's head \<close>
-          ss_\<CC> := [] \<comment> \<open> empty chains mempool \<close>
+          ss_\<CC> := {||} \<comment> \<open> empty chains mempool \<close>
         \<rparr>)"
 
 text \<open>
@@ -2321,33 +2322,27 @@ qed
 
 lemma longest_chains_shorter_element:
   assumes "\<not> is_longest_chain \<C> \<CC>"
-  shows "longest_chains (\<C> # \<CC>) = longest_chains \<CC>"
+  shows "longest_chains ({|\<C>|} |\<union>| \<CC>) = longest_chains \<CC>"
 proof -
-  from assms have "[\<C>' \<leftarrow> \<CC>. is_longest_chain \<C>' (\<C> # \<CC>)] = [\<C>' \<leftarrow> \<CC>. is_longest_chain \<C>' \<CC>]"
-    by (metis (no_types, lifting) dual_order.trans linorder_le_cases list.set_intros(2) set_ConsD)
+  from assms have "
+    ffilter (\<lambda>\<C>'. is_longest_chain \<C>' ({|\<C>|} |\<union>| \<CC>)) \<CC> = ffilter (\<lambda>\<C>'. is_longest_chain \<C>' \<CC>) \<CC>"
+    by fastforce
   with assms show ?thesis
-    unfolding longest_chains_def by auto
+    unfolding longest_chains_def by fastforce
 qed
 
 lemma longest_chains_empty:
-  shows "longest_chains [] = []"
-  unfolding longest_chains_def by simp
+  shows "longest_chains {||} = {||}"
+  unfolding longest_chains_def by fastforce
 
 lemma longest_chains_elem_is_longest:
   assumes "is_longest_chain \<C> \<CC>"
-  shows "\<C> \<in> set (longest_chains (\<C> # \<CC>))"
-proof -
-  have "\<C> \<in> set (\<C> # \<CC>)"
-    by simp
-  moreover from assms have "is_longest_chain \<C> (\<C> # \<CC>)"
-    by simp
-  ultimately show ?thesis
-    unfolding longest_chains_def by simp
-qed
+  shows "\<C> |\<in>| (longest_chains ({|\<C>|} |\<union>| \<CC>))"
+  using assms unfolding longest_chains_def by simp
 
 lemma longest_chains_singleton:
-  shows "longest_chains [\<C>] = [\<C>]"
-  unfolding longest_chains_def by simp
+  shows "longest_chains {|\<C>|} = {|\<C>|}"
+  unfolding longest_chains_def by fastforce
 
 lemma trimmed_hashed_lcp_is_first_suffix:
   assumes "\<not> disjoint_chains \<C> \<C>'"
@@ -2456,41 +2451,27 @@ lemma forks_at_mostI [intro]:
   using first_suffix_eq_chains and forks_at_most_impl by simp
 
 lemma max_valid_no_candidates:
-  shows "max_valid \<C> [] = \<C>"
+  shows "max_valid \<C> {||} = \<C>"
 proof -
-  have "longest_chains [\<C>] = [\<C>]"
+  have "longest_chains {|\<C>|} = {|\<C>|}"
     by (rule longest_chains_singleton)
   moreover have "forks_at_most k \<C> \<C>"
     by (intro forks_at_mostI)
   ultimately show ?thesis
-    by auto
+    using longest_chains_def by fastforce
 qed
 
 lemma max_valid_local_bias:
   assumes "is_longest_chain \<C> \<CC>"
   shows "max_valid \<C> \<CC> = \<C>"
 proof -
-  from assms have "\<C> \<in> set (longest_chains (\<C> # [\<C>' \<leftarrow> \<CC>. forks_at_most k \<C> \<C>']))"
-    using longest_chains_elem_is_longest by auto
+  from assms have "\<C> |\<in>| longest_chains ({|\<C>|} |\<union>| ffilter (forks_at_most k \<C>) \<CC>)"
+    using longest_chains_elem_is_longest by simp
   moreover have "forks_at_most k \<C> \<C>"
     by (intro forks_at_mostI)
-  ultimately have "\<C> \<in> set (longest_chains [\<C>' \<leftarrow> \<C> # \<CC>. forks_at_most k \<C> \<C>'])"
-    by auto
+  ultimately have "\<C> |\<in>| longest_chains (ffilter (forks_at_most k \<C>) ({|\<C>|} |\<union>| \<CC>))"
+    using longest_chains_def by fastforce
   then show ?thesis
-    by (simp del: forks_at_most_def)
-qed
-
-lemma max_valid_preserves_order:
-  assumes "\<not> is_longest_chain \<C> [\<C>' \<leftarrow> \<CC>. forks_at_most k \<C> \<C>']"
-    and "\<CC>\<^sub>m\<^sub>a\<^sub>x = longest_chains [\<C>' \<leftarrow> \<CC>. forks_at_most k \<C> \<C>']"
-    and "\<CC>\<^sub>m\<^sub>a\<^sub>x \<noteq> []"
-  shows "max_valid \<C> \<CC> = hd \<CC>\<^sub>m\<^sub>a\<^sub>x"
-proof -
-  from assms have "\<CC>\<^sub>m\<^sub>a\<^sub>x = longest_chains [\<C>' \<leftarrow> \<C> # \<CC>. forks_at_most k \<C> \<C>']"
-    using longest_chains_shorter_element by simp
-  moreover from assms have "\<C> \<notin> set \<CC>\<^sub>m\<^sub>a\<^sub>x"
-    unfolding longest_chains_def by simp
-  ultimately show ?thesis
     by (simp del: forks_at_most_def)
 qed
 
@@ -2515,7 +2496,7 @@ abbreviation test_\<H>\<^sub>B :: "test_block \<Rightarrow> test_block" where "t
 definition "test_forks_at_most = chain_selection.forks_at_most test_\<H>\<^sub>B"
 definition "test_first_suffix = chain_selection.first_suffix test_\<H>\<^sub>B"
 definition "test_max_valid = chain_selection.max_valid test_k test_\<H>\<^sub>B"
-definition test_longest_chains :: "test_chain list \<Rightarrow> test_chain list" where
+definition test_longest_chains :: "test_chain fset \<Rightarrow> test_chain fset" where
   "test_longest_chains = chain_selection.longest_chains"
 
 interpretation test_chain_selection: chain_selection test_k test_R test_f test_ha test_\<H>\<^sub>B
@@ -2536,6 +2517,28 @@ abbreviation make_test_block :: "slot \<Rightarrow> test_block" ("B\<^bsub>_\<^e
 
 abbreviation make_test_chain :: "slot list \<Rightarrow> test_chain" ("\<langle>_\<rangle>") where
   "\<langle>ss\<rangle> \<equiv> map make_test_block ss"
+
+lemma Longest_common_prefix_pair [simp]:
+  shows "Longest_common_prefix {xs, ys} = longest_common_prefix xs ys"
+proof (induction xs ys rule: longest_common_prefix.induct)
+  case (1 x xs y ys)
+  then show ?case
+  proof (cases "x = y")
+    case True
+    have "Longest_common_prefix {x # xs, x # ys} = x # Longest_common_prefix {xs, ys}"
+      using Longest_common_prefix_image_Cons [OF insert_not_empty [where A = "{ys}"]] by simp
+    also have "\<dots> = x # longest_common_prefix xs ys"
+      by (simp only: "1.IH" [OF True])
+    finally show ?thesis
+      by (simp add: True)
+  next
+    case False
+    then have "Longest_common_prefix {x # xs, y # ys} = []"
+      using Longest_common_prefix_eq_Nil by (metis insertCI)
+    with False show ?thesis
+      by simp
+  qed
+qed (simp_all add: Longest_common_prefix_Nil)
 
 notepad
 begin
@@ -2586,37 +2589,101 @@ begin
   \<close>
 
   \<comment> \<open>No candidate chains were broadcast during the current slot, so the local chain is not updated:\<close>
-  value "test_chain_selection.max_valid \<langle>[0, 1]\<rangle> [] = \<langle>[0, 1]\<rangle>"
+  have "test_chain_selection.max_valid \<langle>[0, 1]\<rangle> {||} = \<langle>[0, 1]\<rangle>"
+    by (fact test_chain_selection.max_valid_no_candidates)
 
   \<comment> \<open>The only candidate chain is longer than the local chain and is a valid fork, so it is adopted:\<close>
-  value "test_chain_selection.max_valid \<langle>[0, 1]\<rangle> [\<langle>[0, 1, 2]\<rangle>] = \<langle>[0, 1, 2]\<rangle>"
+  have "test_chain_selection.max_valid \<langle>[0, 1]\<rangle> {|\<langle>[0, 1, 2]\<rangle>|} = \<langle>[0, 1, 2]\<rangle>"
+    (is \<open>test_chain_selection.max_valid ?\<C> {|?\<C>'|} = _\<close>)
+  proof -
+    have "ffilter (test_chain_selection.forks_at_most test_k ?\<C>) ({|?\<C>|} |\<union>| {|?\<C>'|}) = {|?\<C>, ?\<C>'|}"
+      by force
+    moreover have "test_chain_selection.longest_chains {|?\<C>, ?\<C>'|} = {|?\<C>'|}"
+      using test_longest_chains_def and test_chain_selection.longest_chains_shorter_element
+        and test_chain_selection.longest_chains_singleton
+      by auto
+    ultimately show ?thesis
+      by simp
+  qed
 
   \<comment> \<open>
     The only candidate chain is shorter than the local chain and a is valid fork, so it's not
     adopted:
   \<close>
-  value "test_chain_selection.max_valid \<langle>[0, 1, 2]\<rangle> [\<langle>[0, 1]\<rangle>] = \<langle>[0, 1, 2]\<rangle>"
+  have "test_chain_selection.max_valid \<langle>[0, 1, 2]\<rangle> {|\<langle>[0, 1]\<rangle>|} = \<langle>[0, 1, 2]\<rangle>"
+    by (intro test_chain_selection.max_valid_local_bias) simp
 
   \<comment> \<open>
     The only candidate chain is equal length as the local chain and is a valid fork, so it's not
     adopted (bias towards the local chain):
   \<close>
-  value "test_chain_selection.max_valid \<langle>[0, 1]\<rangle> [\<langle>[3, 4]\<rangle>] = \<langle>[0, 1]\<rangle>"
+  have "test_chain_selection.max_valid \<langle>[0, 1]\<rangle> {|\<langle>[3, 4]\<rangle>|} = \<langle>[0, 1]\<rangle>"
+    by (intro test_chain_selection.max_valid_local_bias) simp
 
   \<comment> \<open>
     The only candidate chain is longer than the local chain but is an invalid fork, so it's not
     adopted:
   \<close>
-  value "test_chain_selection.max_valid \<langle>[0, 1, 2]\<rangle> [\<langle>[3, 4, 5, 6]\<rangle>] = \<langle>[0, 1, 2]\<rangle>"
+  have "test_chain_selection.max_valid \<langle>[0, 1, 2]\<rangle> {|\<langle>[3, 4, 5, 6]\<rangle>|} = \<langle>[0, 1, 2]\<rangle>"
+    (is \<open>test_chain_selection.max_valid ?\<C> {|?\<C>'|} = _\<close>)
+  proof -
+    have "test_chain_selection.forks_at_most test_k ?\<C> ?\<C>"
+      by (intro test_chain_selection.forks_at_mostI)
+    moreover have "\<not> test_chain_selection.forks_at_most test_k ?\<C> ?\<C>'"
+      by simp
+    ultimately have "ffilter (test_chain_selection.forks_at_most test_k ?\<C>) ({|?\<C>|} |\<union>| {|?\<C>'|}) = {|?\<C>|}"
+      by auto
+    moreover have "test_chain_selection.longest_chains {|?\<C>|} = {|?\<C>|}"
+      by (fact test_chain_selection.longest_chains_singleton)
+    ultimately show ?thesis
+      by simp
+  qed
 
   \<comment> \<open>The longest candidate is adopted:\<close>
-  value "test_chain_selection.max_valid \<langle>[0, 1]\<rangle> [\<langle>[3, 4, 5, 6]\<rangle>, \<langle>[0, 1, 2]\<rangle>] = \<langle>[3, 4, 5, 6]\<rangle>"
+  have "test_chain_selection.max_valid \<langle>[0, 1]\<rangle> {|\<langle>[3, 4, 5, 6]\<rangle>, \<langle>[0, 1, 2]\<rangle>|} = \<langle>[3, 4, 5, 6]\<rangle>"
+    (is \<open>test_chain_selection.max_valid ?\<C> {|?\<C>', ?\<C>''|} = _\<close>)
+  proof -
+    have "ffilter (test_chain_selection.forks_at_most test_k ?\<C>) ({|?\<C>|} |\<union>| {|?\<C>', ?\<C>''|}) = {|?\<C>, ?\<C>', ?\<C>''|}"
+      by auto
+    moreover have "test_chain_selection.longest_chains {|?\<C>, ?\<C>', ?\<C>''|} = {|?\<C>'|}"
+      unfolding test_chain_selection.longest_chains_def by fastforce
+    ultimately show ?thesis
+      by simp
+  qed
 
-  \<comment> \<open>The first longest candidate is adopted:\<close>
-  value "test_chain_selection.max_valid \<langle>[0, 1]\<rangle> [\<langle>[0, 1, 2]\<rangle>, \<langle>[0, 1, 3]\<rangle>] = \<langle>[0, 1, 2]\<rangle>"
+  \<comment> \<open>Either of the candidates is adopted:\<close>
+  have "test_chain_selection.max_valid \<langle>[0, 1]\<rangle> {|\<langle>[0, 1, 2]\<rangle>, \<langle>[0, 1, 3]\<rangle>|} |\<in>| {|\<langle>[0, 1, 2]\<rangle>, \<langle>[0, 1, 3]\<rangle>|}"
+    (is \<open>test_chain_selection.max_valid ?\<C> {|?\<C>', ?\<C>''|} |\<in>| _\<close>)
+  proof -
+    have "ffilter (test_chain_selection.forks_at_most test_k ?\<C>) ({|?\<C>|} |\<union>| {|?\<C>', ?\<C>''|}) = {|?\<C>, ?\<C>', ?\<C>''|}"
+      by auto
+    moreover have "test_chain_selection.longest_chains {|?\<C>, ?\<C>', ?\<C>''|} = {|?\<C>', ?\<C>''|}"
+      unfolding test_chain_selection.longest_chains_def by fastforce
+    moreover have "\<exists>\<C>'. \<C>' |\<in>| {|?\<C>', ?\<C>''|}"
+      by blast
+    then have "(SOME \<C>'. \<C>' |\<in>| {|?\<C>', ?\<C>''|}) |\<in>| {|?\<C>', ?\<C>''|}"
+      by (iprover intro: someI2_ex)
+    ultimately show ?thesis
+      by simp
+  qed
 
   \<comment> \<open>Invalid forks are filtered out:\<close>
-  value "test_chain_selection.max_valid \<langle>[0, 1, 2]\<rangle> [\<langle>[3, 4, 5, 6]\<rangle>, \<langle>[0, 1, 2, 3]\<rangle>] = \<langle>[0, 1, 2, 3]\<rangle>"
+  have "test_chain_selection.max_valid \<langle>[0, 1, 2]\<rangle> {|\<langle>[3, 4, 5, 6]\<rangle>, \<langle>[0, 1, 2, 3]\<rangle>|} = \<langle>[0, 1, 2, 3]\<rangle>"
+    (is \<open>test_chain_selection.max_valid ?\<C> {|?\<C>', ?\<C>''|} = _\<close>)
+  proof -
+    have "test_chain_selection.forks_at_most test_k ?\<C> ?\<C>"
+      by (intro test_chain_selection.forks_at_mostI)
+    moreover
+    have "\<not> test_chain_selection.forks_at_most test_k ?\<C> ?\<C>'"
+      and "test_chain_selection.forks_at_most test_k ?\<C> ?\<C>''"
+      by simp_all
+    ultimately have "ffilter (test_chain_selection.forks_at_most test_k ?\<C>) ({|?\<C>|} |\<union>| {|?\<C>', ?\<C>''|}) = {|?\<C>, ?\<C>''|}"
+      by auto
+    moreover have "test_chain_selection.longest_chains {|?\<C>, ?\<C>''|} = {|?\<C>''|}"
+      unfolding test_chain_selection.longest_chains_def by fastforce
+    ultimately show ?thesis
+      by simp
+  qed
 
   code_thms test_chain_selection.forks_at_most test_chain_selection.max_valid
 
