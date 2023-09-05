@@ -12,5 +12,7 @@ session Ouroboros = HOL +
     "Ouroboros_Praos_Implementation"
     "Finite_Map_Extras_Test"
     "Ouroboros-Mini_Protocols"
+    "Ouroboros-Mini_Protocols-Ping_Pong"
+    "Ouroboros-Mini_Protocols-Request_Response"
   document_files
     "root.tex"
