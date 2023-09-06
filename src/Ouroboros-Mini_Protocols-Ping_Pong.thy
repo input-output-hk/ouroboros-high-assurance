@@ -13,6 +13,12 @@ begin
 locale ping_pong =
   fixes no_of_rounds :: nat
 
+subsection \<open>Parties\<close>
+
+datatype party =
+  Client |
+  Server
+
 subsection \<open>State Machines\<close>
 
 datatype state =
@@ -24,8 +30,8 @@ datatype message =
   is_pong: Pong
 
 primrec agent_in_state' where
-  "agent_in_state' Idle = Us" |
-  "agent_in_state' Busy = Them"
+  "agent_in_state' Idle = Client" |
+  "agent_in_state' Busy = Server"
 
 inductive can_finish_in_state' where
   "can_finish_in_state' Idle"
@@ -36,15 +42,15 @@ primrec next_state' where
   "next_state' Idle m = (partial_case m of Ping \<Rightarrow> Busy)" |
   "next_state' Busy m = (partial_case m of Pong \<Rightarrow> Idle)"
 
-definition client_state_machine where
-  [simp]: "client_state_machine = \<lparr>
+definition state_machine where
+  [simp]: "state_machine = \<lparr>
     initial_state = Idle,
     agent_in_state = agent_in_state',
     can_finish_in_state = can_finish_in_state',
     next_state = next_state'
   \<rparr>"
 
-sublocale ping_pong \<subseteq> protocol_state_machines \<open>client_state_machine\<close> .
+sublocale ping_pong \<subseteq> protocol_state_machine \<open>state_machine\<close> .
 
 subsection \<open>Programs\<close>
 
@@ -52,7 +58,7 @@ corec client_program where
   "client_program n = (case n of
     0 \<Rightarrow>
       \<up> Done;
-      \<triangle> () |
+      \<bottom> |
     Suc k \<Rightarrow>
       \<up> Cont Ping;
       \<down> M; (partial_case M of
@@ -64,30 +70,40 @@ corec server_program where
   "server_program =
     \<down> M; (partial_case M of
       Done \<Rightarrow>
-        \<triangle> () |
+        \<bottom> |
       Cont Ping \<Rightarrow>
         \<up> Cont Pong;
         server_program
     )"
 
-sublocale
-  ping_pong \<subseteq> protocol_programs \<open>client_possibilities\<close> \<open>client_program no_of_rounds\<close> \<open>server_program\<close>
+context ping_pong
+begin
+
+primrec program where
+  "program Client = client_program no_of_rounds" |
+  "program Server = server_program"
+
+end
+
+sublocale ping_pong \<subseteq> protocol_programs \<open>possibilities\<close> \<open>program\<close>
 proof
-  show "client_program no_of_rounds \<Colon> Cont client_possibilities"
+  have "client_program no_of_rounds \<Colon>\<^bsub>Client\<^esub> Cont possibilities"
     by
       (coinduction arbitrary: no_of_rounds rule: up_to_embedding_is_sound)
       (state_machine_bisimulation
         program_expansion: client_program.code
         extra_splits: nat.splits or_done.splits message.splits
       )
-next
-  show "server_program \<Colon> Cont server_possibilities"
+  moreover
+  have "server_program \<Colon>\<^bsub>Server\<^esub> Cont possibilities"
     by
       (coinduction rule: up_to_embedding_is_sound)
       (state_machine_bisimulation
         program_expansion: server_program.code
         extra_splits: or_done.splits message.splits
       )
+  ultimately show "program p \<Colon>\<^bsub>p\<^esub> Cont possibilities" for p
+    by (cases p) simp_all
 qed
 
 subsection \<open>The End\<close>
