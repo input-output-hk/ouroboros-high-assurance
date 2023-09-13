@@ -71,7 +71,7 @@ primrec permit :: "('p, 'm) possibilities \<Rightarrow> 'm or_done \<Rightarrow>
 text \<open>
   Based on this relation, we introduce a function that tells when message transmission will end the
   execution of the protocol and, in situations where it will not, what the possibilities afterwards
-  are.
+  will be.
 \<close>
 
 definition follow_up :: "('p, 'm) possibilities \<Rightarrow> 'm or_done \<Rightarrow> ('p, 'm) possibilities or_done" where
