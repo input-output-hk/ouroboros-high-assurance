@@ -1,7 +1,7 @@
 section \<open>Chain-Sync Mini-Protocol\<close>
 
 text \<open>
-  The theory in this section implements the chain-sync mini-protocol.
+  The theory in this section implements the chain synchronization mini-protocol.
 \<close>
 
 theory "Ouroboros-Mini_Protocols-Chain_Sync"
@@ -53,7 +53,7 @@ datatype phase =
 type_synonym consumer_parameters = "
   chain \<comment> \<open>current chain\<close> \<times>
   phase \<comment> \<open>current phase\<close> \<times>
-  (chain \<Rightarrow> point list)" \<comment> \<open>consumer's algorithm for selecting points\<close>
+  (chain \<Rightarrow> point list)" \<comment> \<open>function for selecting candidate points\<close>
 
 type_synonym producer_parameters = "
   chain \<comment> \<open>current chain\<close> \<times>
