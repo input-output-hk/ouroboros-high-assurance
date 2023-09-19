@@ -1,4 +1,4 @@
-section \<open>Chain-Sync Mini-Protocol\<close>
+section \<open>Chain Synchronization Mini-Protocol\<close>
 
 text \<open>
   The theory in this section implements the chain synchronization mini-protocol.
