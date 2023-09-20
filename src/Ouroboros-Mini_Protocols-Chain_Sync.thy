@@ -10,85 +10,37 @@ theory "Ouroboros-Mini_Protocols-Chain_Sync"
     "HOL-Library.BNF_Corec"
 begin
 
-subsection \<open>Cryptographic Primitives\<close>
-
-typedecl hash
-
-axiomatization
-where
-  hash_linear_order: "OFCLASS(hash, linorder_class)"
-
-instance hash :: linorder
-  by (fact hash_linear_order)
-
-subsection \<open>Blocks\<close>
-
-datatype block = Block (hash: \<open>hash\<close>)
-
-subsection \<open>Chains\<close>
-
-type_synonym chain = "block list"
-
-type_synonym chain_index = nat
-
-abbreviation (input) tip_index :: "chain \<Rightarrow> chain_index" where
-  "tip_index \<C> \<equiv> length \<C> - 1"
-
-abbreviation (input) tip :: "chain \<Rightarrow> block" where
-  "tip \<C> \<equiv> \<C> ! (tip_index \<C>)"
-
-subsection \<open>Points\<close>
-
-type_synonym point = hash
-
-definition block_point :: "block \<Rightarrow> point" where
-  [simp]: "block_point \<equiv> hash"
-
-subsection \<open>Protocol Parameters\<close>
-
-datatype phase =
-  is_intersection_finding: IntersectionFinding |
-  is_chain_update: ChainUpdate
-
-type_synonym consumer_parameters = "
-  chain \<comment> \<open>current chain\<close> \<times>
-  phase \<comment> \<open>current phase\<close> \<times>
-  (chain \<Rightarrow> point list)" \<comment> \<open>function for selecting candidate points\<close>
-
-type_synonym producer_parameters = "
-  chain \<comment> \<open>current chain\<close> \<times>
-  chain_index \<comment> \<open>read pointer\<close> \<times>
-  bool \<comment> \<open>whether the next response to \<open>RequestNext\<close> should be \<open>RollBackward\<close>\<close>"
-
 locale chain_sync =
-  fixes initial_params\<^sub>c :: consumer_parameters
-    and initial_params\<^sub>p :: producer_parameters
+  fixes initial_items\<^sub>c :: "('d \<times> 'p) list"
+  fixes initial_items\<^sub>s :: "('d \<times> 'p) list"
+  fixes candidate_points :: "('d \<times> 'p) list \<Rightarrow> 'p list"
+  fixes best_intersection_point :: "('d \<times> 'p) list \<Rightarrow> 'p list \<Rightarrow> 'p option"
 
 subsection \<open>Parties\<close>
 
 datatype party =
-  Producer |
-  Consumer
+  Client |
+  Server
 
-subsection \<open>State Machines\<close>
+subsection \<open>State Machine\<close>
 
 datatype state =
   Idle |
   Intersect |
   CanAwait
 
-datatype message =
+datatype ('d, 'p) message =
   is_next_request: RequestNext |
-  is_roll_forward: RollForward \<open>block\<close> \<open>block\<close> |
-  is_roll_backward: RollBackward \<open>point\<close> \<open>block\<close> |
+  is_roll_forward: RollForward \<open>'d \<times> 'p\<close> |
+  is_roll_backward: RollBackward \<open>'p\<close> |
   is_await_reply: AwaitReply |
-  is_find_intersect: FindIntersect \<open>point list\<close> |
-  is_intersect_found: IntersectFound \<open>point\<close> \<open>block\<close> |
-  is_intersect_not_found: IntersectNotFound \<open>block\<close>
+  is_find_intersect: FindIntersect \<open>'p list\<close> |
+  is_intersect_found: IntersectFound \<open>'p\<close> |
+  is_intersect_not_found: IntersectNotFound
 
 fun agent_in_state' where
-  "agent_in_state' Idle = Consumer" |
-  "agent_in_state' _ = Producer"
+  "agent_in_state' Idle = Client" |
+  "agent_in_state' _ = Server"
 
 inductive can_finish_in_state' where
   "can_finish_in_state' Idle"
@@ -96,19 +48,19 @@ inductive can_finish_in_state' where
 declare can_finish_in_state'.simps [simp]
 
 primrec next_state' where
-  "next_state' Idle m = (
-    partial_case m of
-      FindIntersect _ \<Rightarrow> Intersect |
-      RequestNext \<Rightarrow> CanAwait)" |
-  "next_state' Intersect m = (
-    partial_case m of
-      IntersectFound _ _ \<Rightarrow> Idle |
-      IntersectNotFound _ \<Rightarrow> Idle)" |
-  "next_state' CanAwait m = (
-    partial_case m of
-      RollForward _ _ \<Rightarrow> Idle |
-      RollBackward _ _ \<Rightarrow> Idle |
-      AwaitReply \<Rightarrow> Idle)" \<comment> \<open>only for this initial implementation\<close>
+  "next_state' Idle m = (partial_case m of
+    FindIntersect _ \<Rightarrow> Intersect |
+    RequestNext \<Rightarrow> CanAwait
+  )" |
+  "next_state' Intersect m = (partial_case m of
+    IntersectFound _ \<Rightarrow> Idle |
+    IntersectNotFound \<Rightarrow> Idle
+  )" |
+  "next_state' CanAwait m = (partial_case m of
+    RollForward _ \<Rightarrow> Idle |
+    RollBackward _ \<Rightarrow> Idle |
+    AwaitReply \<Rightarrow> Idle \<comment> \<open>only for this initial implementation\<close>
+  )"
 
 definition state_machine where
   [simp]: "state_machine = \<lparr>
@@ -122,100 +74,99 @@ sublocale chain_sync \<subseteq> protocol_state_machine \<open>state_machine\<cl
 
 subsection \<open>Programs\<close>
 
-definition rollback_to :: "chain \<Rightarrow> point \<Rightarrow> chain" where
-  [simp]: "rollback_to \<C> point = takeWhile (\<lambda>block. hash block \<le> point) \<C>"
+datatype phase =
+  is_intersection_finding: IntersectionFinding |
+  is_items_update: ItemsUpdate
 
-corec consumer_program where
-  "consumer_program params = (
-    let (\<C>, phase, candidate_points) = params in
-    case phase of
+definition roll_back_to :: "('d \<times> 'p) list \<Rightarrow> 'p \<Rightarrow> ('d \<times> 'p) list" where
+  [simp]: "roll_back_to \<I> p = (THE \<I>\<^sub>1. \<exists>\<I>\<^sub>2. \<I> = \<I>\<^sub>1 @ \<I>\<^sub>2 \<and> snd (last \<I>\<^sub>1) = p)"
+
+corec client_program where
+  "client_program ph \<kappa> \<I> = (
+    case ph of
       IntersectionFinding \<Rightarrow>
-        \<up> Cont (FindIntersect (candidate_points \<C>));
+        \<up> Cont (FindIntersect (\<kappa> \<I>));
         \<down> M; (partial_case M of
-          Cont (IntersectNotFound _) \<Rightarrow>
+          Cont IntersectNotFound \<Rightarrow>
             \<up> Done;
             \<bottom> |
-          Cont (IntersectFound _ _) \<Rightarrow>
-            consumer_program (\<C>, ChainUpdate, candidate_points)
+          Cont (IntersectFound _) \<Rightarrow>
+            client_program ItemsUpdate \<kappa> \<I>
         ) |
-      ChainUpdate \<Rightarrow>
+      ItemsUpdate \<Rightarrow>
         \<up> Cont RequestNext;
         \<down> M; (partial_case M of
-          Cont (RollForward header _) \<Rightarrow>
-            consumer_program ((\<C> @ [header]), phase, candidate_points) |
-          Cont (RollBackward rollback_point _) \<Rightarrow>
-            consumer_program ((rollback_to \<C> rollback_point), phase, candidate_points) |
-          Cont AwaitReply \<Rightarrow> \<comment> \<open>consumer is up to date\<close>
+          Cont (RollForward i) \<Rightarrow>
+            client_program ph \<kappa> (\<I> @ [i]) |
+          Cont (RollBackward p) \<Rightarrow>
+            client_program ph \<kappa> (roll_back_to \<I> p) |
+          Cont AwaitReply \<Rightarrow> \<comment> \<open>client is up to date\<close>
             \<up> Done;
             \<bottom>
         )
     )"
 
-definition best_intersection_point :: "chain \<Rightarrow> point list \<Rightarrow> point option" where
-  [simp]: "best_intersection_point \<C> points = (
-    let
-      intersection_points = List.set points \<inter> List.set (map hash \<C>)
-    in
-      if intersection_points = {} then None else Some (Max intersection_points)
-  )"
+definition index_from_point :: "'p \<Rightarrow> ('d \<times> 'p) list \<Rightarrow> nat" where
+  [simp]: "index_from_point p \<I> = (THE k. snd (\<I> ! k) = p)"
 
-(* NOTE: Assumes that \<exists>index \<in> {0..<length \<C>}. hash (\<C> ! index) = h *)
-definition index_from_hash :: "hash \<Rightarrow> chain \<Rightarrow> chain_index" where
-  [simp]: "index_from_hash h \<C> = hd [index. (block, index) \<leftarrow> zip \<C> [0..<length \<C>], hash block = h]"
-
-corec producer_program where
-  "producer_program params = (
-    let (\<C>, read_ptr, must_rollback) = params in
+corec server_program where
+  "server_program rp mrb \<rho> \<I> =
     \<down> M; (partial_case M of
       Done \<Rightarrow>
         \<bottom> |
-      Cont (FindIntersect points) \<Rightarrow> (
-        case best_intersection_point \<C> points of
+      Cont (FindIntersect ps) \<Rightarrow> (
+        case \<rho> \<I> ps of
           None \<Rightarrow>
-            \<up> Cont (IntersectNotFound (tip \<C>));
-            producer_program (\<C>, read_ptr, must_rollback) |
-          Some intersection_point \<Rightarrow>
-            \<up> Cont (IntersectFound intersection_point (tip \<C>));
-            producer_program (\<C>, index_from_hash intersection_point \<C>, True)) |
+            \<up> Cont IntersectNotFound;
+            server_program rp mrb \<rho> \<I> |
+          Some p \<Rightarrow>
+            \<up> Cont (IntersectFound p);
+            server_program (index_from_point p \<I>) True \<rho> \<I>
+      ) |
       Cont RequestNext \<Rightarrow>
-        if must_rollback then
-          \<up> Cont (RollBackward (block_point (\<C> ! read_ptr)) (tip \<C>));
-          producer_program (\<C>, read_ptr + 1, False)
+        if mrb then
+          \<up> Cont (RollBackward (snd (\<I> ! rp)));
+          server_program (Suc rp) False \<rho> \<I>
         else
-          if read_ptr \<le> tip_index \<C> then
-            \<up> Cont (RollForward (\<C> ! read_ptr) (tip \<C>));
-            producer_program (\<C>, read_ptr + 1, must_rollback)
-          else
+          if rp < length \<I> then
+            \<up> Cont (RollForward (\<I> ! rp));
+            server_program (Suc rp) mrb \<rho> \<I>
+          else \<comment> \<open>client is up to date\<close>
             \<up> Cont AwaitReply;
-            producer_program (\<C>, read_ptr, must_rollback) \<comment> \<open>consumer is up to date\<close>
-    )
-  )"
+            server_program rp mrb \<rho> \<I>
+    )"
 
 context chain_sync
 begin
 
 primrec program where
-  "program Consumer = consumer_program initial_params\<^sub>c" |
-  "program Producer = producer_program initial_params\<^sub>p"
+  "program Client = client_program IntersectionFinding candidate_points initial_items\<^sub>c" |
+  "program Server = server_program 0 False best_intersection_point initial_items\<^sub>s"
 
 end
 
 sublocale chain_sync \<subseteq> protocol_programs \<open>possibilities\<close> \<open>program\<close>
 proof
-  have "consumer_program initial_params\<^sub>c \<Colon>\<^bsub>Consumer\<^esub> Cont possibilities"
+  have "
+    client_program phase candidate_points initial_items\<^sub>c
+    \<Colon>\<^bsub>Client\<^esub>
+    Cont possibilities" for phase
     by
-      (coinduction arbitrary: initial_params\<^sub>c rule: up_to_embedding_is_sound)
+      (coinduction arbitrary: initial_items\<^sub>c phase rule: up_to_embedding_is_sound)
       (state_machine_bisimulation
-        program_expansion: consumer_program.code
+        program_expansion: client_program.code
         extra_splits: or_done.splits message.splits phase.splits
       )
   moreover
-  have "producer_program initial_params\<^sub>p \<Colon>\<^bsub>Producer\<^esub> Cont possibilities"
+  have "
+    server_program read_ptr must_roll_back best_intersection_point initial_items\<^sub>s
+    \<Colon>\<^bsub>Server\<^esub>
+    Cont possibilities" for read_ptr and must_roll_back
     by
-      (coinduction arbitrary: initial_params\<^sub>p rule: up_to_embedding_is_sound)
+      (coinduction arbitrary: initial_items\<^sub>s read_ptr must_roll_back rule: up_to_embedding_is_sound)
       (state_machine_bisimulation
-        program_expansion: producer_program.code
-        extra_splits: or_done.splits message.splits
+        program_expansion: server_program.code
+        extra_splits: or_done.splits message.splits option.splits
       )
   ultimately show "program p \<Colon>\<^bsub>p\<^esub> Cont possibilities" for p
     by (cases p) simp_all
