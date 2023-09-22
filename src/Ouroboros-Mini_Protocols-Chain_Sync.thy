@@ -38,9 +38,10 @@ datatype ('i, 'p) message =
   is_roll_backward: RollBackward \<open>'p\<close> |
   is_await_reply: AwaitReply
 
-fun agent_in_state' where
+primrec agent_in_state' where
   "agent_in_state' Idle = Client" |
-  "agent_in_state' _ = Server"
+  "agent_in_state' Intersect = Server" |
+  "agent_in_state' CanAwait = Server"
 
 inductive can_finish_in_state' where
   "can_finish_in_state' Idle"
