@@ -113,7 +113,7 @@ definition first_intersection_point :: "('i \<Rightarrow> 'p) \<Rightarrow> 'p l
   [simp]: "first_intersection_point \<psi> ps \<C>  = find (\<lambda>p. p \<in> set (map \<psi> \<C>)) ps"
 
 corec server_program where
-  "server_program rp mrb \<psi> \<C> =
+  "server_program \<psi> \<C> rp mrb =
     \<down> M; (partial_case M of
       Done \<Rightarrow>
         \<bottom> |
@@ -121,22 +121,22 @@ corec server_program where
         case first_intersection_point \<psi> ps \<C> of
           None \<Rightarrow>
             \<up> Cont IntersectNotFound;
-            server_program rp mrb \<psi> \<C> |
+            server_program \<psi> \<C> rp mrb |
           Some p \<Rightarrow>
             \<up> Cont (IntersectFound p);
-            server_program (index \<psi> p \<C>) True \<psi> \<C>
+            server_program \<psi> \<C> (index \<psi> p \<C>) True
       ) |
       Cont RequestNext \<Rightarrow>
         if mrb then
           \<up> Cont (RollBackward (\<psi> (\<C> ! rp)));
-          server_program (Suc rp) False \<psi> \<C>
+          server_program \<psi> \<C> (Suc rp) False
         else
           if rp < length \<C> then
             \<up> Cont (RollForward (\<C> ! rp));
-            server_program (Suc rp) mrb \<psi> \<C>
+            server_program \<psi> \<C> (Suc rp) mrb
           else \<comment> \<open>client is up to date\<close>
             \<up> Cont AwaitReply;
-            server_program rp mrb \<psi> \<C>
+            server_program \<psi> \<C> rp mrb
     )"
 
 context chain_sync
@@ -144,7 +144,7 @@ begin
 
 primrec program where
   "program Client = client_program point candidate_points initial_client_chain IntersectionFinding" |
-  "program Server = server_program 0 False point initial_server_chain"
+  "program Server = server_program point initial_server_chain 0 False"
 
 end
 
@@ -162,7 +162,7 @@ proof
       )
   moreover
   have "
-    server_program read_ptr must_roll_back point initial_server_chain
+    server_program point initial_server_chain read_ptr must_roll_back
     \<Colon>\<^bsub>Server\<^esub>
     Cont possibilities" for read_ptr and must_roll_back
     by
