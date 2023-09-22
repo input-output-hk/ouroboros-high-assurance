@@ -11,7 +11,7 @@ theory "Ouroboros-Mini_Protocols-Chain_Sync"
 begin
 
 locale chain_sync =
-  fixes point_of :: "'i \<Rightarrow> 'p"
+  fixes point :: "'i \<Rightarrow> 'p"
   fixes candidate_points :: "'i list \<Rightarrow> 'p list"
   fixes initial_client_chain :: "'i list"
   fixes initial_server_chain :: "'i list"
@@ -106,8 +106,8 @@ corec client_program where
       )
    )"
 
-definition index_of :: "('i \<Rightarrow> 'p) \<Rightarrow> 'p \<Rightarrow> 'i list \<Rightarrow> nat" where
-  [simp]: "index_of \<psi> p \<C> = (THE k. \<psi> (\<C> ! k) = p)"
+definition index :: "('i \<Rightarrow> 'p) \<Rightarrow> 'p \<Rightarrow> 'i list \<Rightarrow> nat" where
+  [simp]: "index \<psi> p \<C> = (THE k. \<psi> (\<C> ! k) = p)"
 
 definition first_intersection_point :: "('i \<Rightarrow> 'p) \<Rightarrow> 'p list \<Rightarrow> 'i list \<Rightarrow> 'p option" where
   [simp]: "first_intersection_point \<psi> ps \<C>  = find (\<lambda>p. p \<in> set (map \<psi> \<C>)) ps"
@@ -124,7 +124,7 @@ corec server_program where
             server_program rp mrb \<psi> \<C> |
           Some p \<Rightarrow>
             \<up> Cont (IntersectFound p);
-            server_program (index_of \<psi> p \<C>) True \<psi> \<C>
+            server_program (index \<psi> p \<C>) True \<psi> \<C>
       ) |
       Cont RequestNext \<Rightarrow>
         if mrb then
@@ -143,15 +143,15 @@ context chain_sync
 begin
 
 primrec program where
-  "program Client = client_program point_of candidate_points initial_client_chain IntersectionFinding" |
-  "program Server = server_program 0 False point_of initial_server_chain"
+  "program Client = client_program point candidate_points initial_client_chain IntersectionFinding" |
+  "program Server = server_program 0 False point initial_server_chain"
 
 end
 
 sublocale chain_sync \<subseteq> protocol_programs \<open>possibilities\<close> \<open>program\<close>
 proof
   have "
-    client_program point_of candidate_points initial_client_chain phase
+    client_program point candidate_points initial_client_chain phase
     \<Colon>\<^bsub>Client\<^esub>
     Cont possibilities" for phase
     by
@@ -162,7 +162,7 @@ proof
       )
   moreover
   have "
-    server_program read_ptr must_roll_back point_of initial_server_chain
+    server_program read_ptr must_roll_back point initial_server_chain
     \<Colon>\<^bsub>Server\<^esub>
     Cont possibilities" for read_ptr and must_roll_back
     by
