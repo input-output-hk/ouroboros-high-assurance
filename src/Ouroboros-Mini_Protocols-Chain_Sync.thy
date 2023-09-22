@@ -83,8 +83,8 @@ datatype phase =
   is_chain_update: ChainUpdate
 
 corec client_program where
-  "client_program ph \<kappa> \<psi> \<C> = (
-    case ph of
+  "client_program \<phi> \<kappa> \<psi> \<C> = (
+    case \<phi> of
       IntersectionFinding \<Rightarrow>
         \<up> Cont (FindIntersect (\<kappa> \<C>));
         \<down> M; (partial_case M of
@@ -98,9 +98,9 @@ corec client_program where
         \<up> Cont RequestNext;
         \<down> M; (partial_case M of
           Cont (RollForward i) \<Rightarrow>
-            client_program ph \<kappa> \<psi> (\<C> @ [i]) |
+            client_program \<phi> \<kappa> \<psi> (\<C> @ [i]) |
           Cont (RollBackward p) \<Rightarrow>
-            client_program ph \<kappa> \<psi> (roll_back \<psi> \<C> p) |
+            client_program \<phi> \<kappa> \<psi> (roll_back \<psi> \<C> p) |
           Cont AwaitReply \<Rightarrow> \<comment> \<open>client is up to date\<close>
             \<up> Done;
             \<bottom>
