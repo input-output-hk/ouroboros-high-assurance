@@ -117,14 +117,13 @@ corec server_program where
     \<down> M; (partial_case M of
       Done \<Rightarrow>
         \<bottom> |
-      Cont (FindIntersect ps) \<Rightarrow> (
-        case first_intersection_point \<psi> ps \<C> of
-          None \<Rightarrow>
-            \<up> Cont IntersectNotFound;
-            server_program \<psi> \<C> rp mrb |
-          Some p \<Rightarrow>
-            \<up> Cont (IntersectFound p);
-            server_program \<psi> \<C> (index \<psi> p \<C>) True
+      Cont (FindIntersect ps) \<Rightarrow> (case first_intersection_point \<psi> ps \<C> of
+        None \<Rightarrow>
+          \<up> Cont IntersectNotFound;
+          server_program \<psi> \<C> rp mrb |
+        Some p \<Rightarrow>
+          \<up> Cont (IntersectFound p);
+          server_program \<psi> \<C> (index \<psi> p \<C>) True
       ) |
       Cont RequestNext \<Rightarrow>
         if mrb then
