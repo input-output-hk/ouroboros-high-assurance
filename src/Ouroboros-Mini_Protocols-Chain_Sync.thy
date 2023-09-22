@@ -106,8 +106,8 @@ corec client_program where
       )
    )"
 
-definition index_of :: "'p \<Rightarrow> 'i list \<Rightarrow> ('i \<Rightarrow> 'p) \<Rightarrow> nat" where
-  [simp]: "index_of p \<C> \<psi> = (THE k. \<psi> (\<C> ! k) = p)"
+definition index_of :: "('i \<Rightarrow> 'p) \<Rightarrow> 'p \<Rightarrow> 'i list \<Rightarrow> nat" where
+  [simp]: "index_of \<psi> p \<C> = (THE k. \<psi> (\<C> ! k) = p)"
 
 definition first_intersection_point :: "('i \<Rightarrow> 'p) \<Rightarrow> 'p list \<Rightarrow> 'i list \<Rightarrow> 'p option" where
   [simp]: "first_intersection_point \<psi> ps \<C>  = find (\<lambda>p. p \<in> set (map \<psi> \<C>)) ps"
@@ -124,7 +124,7 @@ corec server_program where
             server_program rp mrb \<psi> \<C> |
           Some p \<Rightarrow>
             \<up> Cont (IntersectFound p);
-            server_program (index_of p \<C> \<psi>) True \<psi> \<C>
+            server_program (index_of \<psi> p \<C>) True \<psi> \<C>
       ) |
       Cont RequestNext \<Rightarrow>
         if mrb then
