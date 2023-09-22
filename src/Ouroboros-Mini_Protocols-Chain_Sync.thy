@@ -31,13 +31,13 @@ datatype state =
   CanAwait
 
 datatype ('i, 'p) message =
+  is_find_intersect: FindIntersect \<open>'p list\<close> |
+  is_intersect_found: IntersectFound \<open>'p\<close> |
+  is_intersect_not_found: IntersectNotFound |
   is_next_request: RequestNext |
   is_roll_forward: RollForward \<open>'i\<close> |
   is_roll_backward: RollBackward \<open>'p\<close> |
-  is_await_reply: AwaitReply |
-  is_find_intersect: FindIntersect \<open>'p list\<close> |
-  is_intersect_found: IntersectFound \<open>'p\<close> |
-  is_intersect_not_found: IntersectNotFound
+  is_await_reply: AwaitReply
 
 fun agent_in_state' where
   "agent_in_state' Idle = Client" |
