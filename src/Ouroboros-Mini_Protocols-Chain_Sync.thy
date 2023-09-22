@@ -133,7 +133,7 @@ corec server_program where
           if rp < length \<C> then
             \<up> Cont (RollForward (\<C> ! rp));
             server_program \<psi> \<C> (Suc rp) mrb
-          else \<comment> \<open>client is up to date\<close>
+          else \<comment> \<open>only for this initial implementation\<close>
             \<up> Cont AwaitReply;
             server_program \<psi> \<C> rp mrb
     )"
