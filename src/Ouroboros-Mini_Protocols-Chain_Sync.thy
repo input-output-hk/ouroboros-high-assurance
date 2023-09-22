@@ -11,8 +11,8 @@ theory "Ouroboros-Mini_Protocols-Chain_Sync"
 begin
 
 locale chain_sync =
-  fixes initial_items\<^sub>c :: "'i list"
-  fixes initial_items\<^sub>s :: "'i list"
+  fixes initial_client_items :: "'i list"
+  fixes initial_server_items :: "'i list"
   fixes candidate_points :: "'i list \<Rightarrow> 'p list"
   fixes best_intersection_point :: "'i list \<Rightarrow> 'p list \<Rightarrow> 'p option"
   fixes point_of :: "'i \<Rightarrow> 'p"
@@ -141,30 +141,30 @@ context chain_sync
 begin
 
 primrec program where
-  "program Client = client_program IntersectionFinding candidate_points point_of initial_items\<^sub>c" |
-  "program Server = server_program 0 False best_intersection_point point_of initial_items\<^sub>s"
+  "program Client = client_program IntersectionFinding candidate_points point_of initial_client_items" |
+  "program Server = server_program 0 False best_intersection_point point_of initial_server_items"
 
 end
 
 sublocale chain_sync \<subseteq> protocol_programs \<open>possibilities\<close> \<open>program\<close>
 proof
   have "
-    client_program phase candidate_points point_of initial_items\<^sub>c
+    client_program phase candidate_points point_of initial_client_items
     \<Colon>\<^bsub>Client\<^esub>
     Cont possibilities" for phase
     by
-      (coinduction arbitrary: initial_items\<^sub>c phase rule: up_to_embedding_is_sound)
+      (coinduction arbitrary: initial_client_items phase rule: up_to_embedding_is_sound)
       (state_machine_bisimulation
         program_expansion: client_program.code
         extra_splits: or_done.splits message.splits phase.splits
       )
   moreover
   have "
-    server_program read_ptr must_roll_back best_intersection_point point_of initial_items\<^sub>s
+    server_program read_ptr must_roll_back best_intersection_point point_of initial_server_items
     \<Colon>\<^bsub>Server\<^esub>
     Cont possibilities" for read_ptr and must_roll_back
     by
-      (coinduction arbitrary: initial_items\<^sub>s read_ptr must_roll_back rule: up_to_embedding_is_sound)
+      (coinduction arbitrary: initial_server_items read_ptr must_roll_back rule: up_to_embedding_is_sound)
       (state_machine_bisimulation
         program_expansion: server_program.code
         extra_splits: or_done.splits message.splits option.splits
