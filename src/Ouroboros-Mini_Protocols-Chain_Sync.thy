@@ -11,10 +11,10 @@ theory "Ouroboros-Mini_Protocols-Chain_Sync"
 begin
 
 locale chain_sync =
+  fixes point_of :: "'i \<Rightarrow> 'p"
+  fixes candidate_points :: "'i list \<Rightarrow> 'p list"
   fixes initial_client_chain :: "'i list"
   fixes initial_server_chain :: "'i list"
-  fixes candidate_points :: "'i list \<Rightarrow> 'p list"
-  fixes point_of :: "'i \<Rightarrow> 'p"
 
 subsection \<open>Parties\<close>
 
