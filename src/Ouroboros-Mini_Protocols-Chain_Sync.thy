@@ -100,7 +100,7 @@ corec client_program where
           client_program \<psi> \<kappa> (\<C> @ [i]) \<phi> |
         Cont (RollBackward p) \<Rightarrow>
           client_program \<psi> \<kappa> (roll_back \<psi> \<C> p) \<phi> |
-        Cont AwaitReply \<Rightarrow> \<comment> \<open>client is up to date\<close>
+        Cont AwaitReply \<Rightarrow> \<comment> \<open>only for this initial implementation\<close>
           \<up> Done;
           \<bottom>
       )
