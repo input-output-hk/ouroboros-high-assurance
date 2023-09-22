@@ -80,7 +80,7 @@ datatype phase =
   is_chain_update: ChainUpdate
 
 definition roll_back :: "('i \<Rightarrow> 'p) \<Rightarrow> 'i list \<Rightarrow> 'p \<Rightarrow> 'i list" where
-  [simp]: "roll_back \<psi> \<C> p = (THE \<C>\<^sub>1. \<exists>\<C>\<^sub>2. \<C> = \<C>\<^sub>1 @ \<C>\<^sub>2 \<and> \<psi> (last \<C>\<^sub>1) = p)"
+  [simp]: "roll_back \<psi> \<C> p = (THE \<C>\<^sub>1. (\<exists>\<C>\<^sub>2. \<C> = \<C>\<^sub>1 @ \<C>\<^sub>2) \<and> \<psi> (last \<C>\<^sub>1) = p)"
 
 corec client_program where
   "client_program ph \<kappa> \<psi> \<C> = (
