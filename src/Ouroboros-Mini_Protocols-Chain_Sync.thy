@@ -144,7 +144,7 @@ context chain_sync
 begin
 
 primrec program where
-  "program Client = client_program IntersectionFinding candidate_points point_of initial_client_chain" |
+  "program Client = client_program point_of candidate_points initial_client_chain IntersectionFinding" |
   "program Server = server_program 0 False point_of initial_server_chain"
 
 end
@@ -152,7 +152,7 @@ end
 sublocale chain_sync \<subseteq> protocol_programs \<open>possibilities\<close> \<open>program\<close>
 proof
   have "
-    client_program phase candidate_points point_of initial_client_chain
+    client_program point_of candidate_points initial_client_chain phase
     \<Colon>\<^bsub>Client\<^esub>
     Cont possibilities" for phase
     by
