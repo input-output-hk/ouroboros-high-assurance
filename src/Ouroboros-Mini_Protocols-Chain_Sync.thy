@@ -14,7 +14,6 @@ locale chain_sync =
   fixes initial_client_chain :: "'i list"
   fixes initial_server_chain :: "'i list"
   fixes candidate_points :: "'i list \<Rightarrow> 'p list"
-  fixes best_intersection_point :: "'i list \<Rightarrow> 'p list \<Rightarrow> 'p option"
   fixes point_of :: "'i \<Rightarrow> 'p"
 
 subsection \<open>Parties\<close>
@@ -110,31 +109,34 @@ corec client_program where
 definition index_of :: "'p \<Rightarrow> 'i list \<Rightarrow> ('i \<Rightarrow> 'p) \<Rightarrow> nat" where
   [simp]: "index_of p \<C> \<psi> = (THE k. \<psi> (\<C> ! k) = p)"
 
+definition first_intersection_point :: "('i \<Rightarrow> 'p) \<Rightarrow> 'p list \<Rightarrow> 'i list \<Rightarrow> 'p option" where
+  [simp]: "first_intersection_point \<psi> ps \<C>  = find (\<lambda>p. p \<in> set (map \<psi> \<C>)) ps"
+
 corec server_program where
-  "server_program rp mrb \<rho> \<psi> \<C> =
+  "server_program rp mrb \<psi> \<C> =
     \<down> M; (partial_case M of
       Done \<Rightarrow>
         \<bottom> |
       Cont (FindIntersect ps) \<Rightarrow> (
-        case \<rho> \<C> ps of
+        case first_intersection_point \<psi> ps \<C> of
           None \<Rightarrow>
             \<up> Cont IntersectNotFound;
-            server_program rp mrb \<rho> \<psi> \<C> |
+            server_program rp mrb \<psi> \<C> |
           Some p \<Rightarrow>
             \<up> Cont (IntersectFound p);
-            server_program (index_of p \<C> \<psi>) True \<rho> \<psi> \<C>
+            server_program (index_of p \<C> \<psi>) True \<psi> \<C>
       ) |
       Cont RequestNext \<Rightarrow>
         if mrb then
           \<up> Cont (RollBackward (\<psi> (\<C> ! rp)));
-          server_program (Suc rp) False \<rho> \<psi> \<C>
+          server_program (Suc rp) False \<psi> \<C>
         else
           if rp < length \<C> then
             \<up> Cont (RollForward (\<C> ! rp));
-            server_program (Suc rp) mrb \<rho> \<psi> \<C>
+            server_program (Suc rp) mrb \<psi> \<C>
           else \<comment> \<open>client is up to date\<close>
             \<up> Cont AwaitReply;
-            server_program rp mrb \<rho> \<psi> \<C>
+            server_program rp mrb \<psi> \<C>
     )"
 
 context chain_sync
@@ -142,7 +144,7 @@ begin
 
 primrec program where
   "program Client = client_program IntersectionFinding candidate_points point_of initial_client_chain" |
-  "program Server = server_program 0 False best_intersection_point point_of initial_server_chain"
+  "program Server = server_program 0 False point_of initial_server_chain"
 
 end
 
@@ -160,7 +162,7 @@ proof
       )
   moreover
   have "
-    server_program read_ptr must_roll_back best_intersection_point point_of initial_server_chain
+    server_program read_ptr must_roll_back point_of initial_server_chain
     \<Colon>\<^bsub>Server\<^esub>
     Cont possibilities" for read_ptr and must_roll_back
     by
