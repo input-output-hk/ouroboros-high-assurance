@@ -83,29 +83,28 @@ datatype phase =
   is_chain_update: ChainUpdate
 
 corec client_program where
-  "client_program \<psi> \<kappa> \<C> \<phi> = (
-    case \<phi> of
-      IntersectionFinding \<Rightarrow>
-        \<up> Cont (FindIntersect (\<kappa> \<C>));
-        \<down> M; (partial_case M of
-          Cont IntersectNotFound \<Rightarrow>
-            \<up> Done;
-            \<bottom> |
-          Cont (IntersectFound _) \<Rightarrow>
-            client_program \<psi> \<kappa> \<C> ChainUpdate
-        ) |
-      ChainUpdate \<Rightarrow>
-        \<up> Cont RequestNext;
-        \<down> M; (partial_case M of
-          Cont (RollForward i) \<Rightarrow>
-            client_program \<psi> \<kappa> (\<C> @ [i]) \<phi> |
-          Cont (RollBackward p) \<Rightarrow>
-            client_program \<psi> \<kappa> (roll_back \<psi> \<C> p) \<phi> |
-          Cont AwaitReply \<Rightarrow> \<comment> \<open>client is up to date\<close>
-            \<up> Done;
-            \<bottom>
-        )
-    )"
+  "client_program \<psi> \<kappa> \<C> \<phi> = (case \<phi> of
+    IntersectionFinding \<Rightarrow>
+      \<up> Cont (FindIntersect (\<kappa> \<C>));
+      \<down> M; (partial_case M of
+        Cont IntersectNotFound \<Rightarrow>
+          \<up> Done;
+          \<bottom> |
+        Cont (IntersectFound _) \<Rightarrow>
+          client_program \<psi> \<kappa> \<C> ChainUpdate
+      ) |
+    ChainUpdate \<Rightarrow>
+      \<up> Cont RequestNext;
+      \<down> M; (partial_case M of
+        Cont (RollForward i) \<Rightarrow>
+          client_program \<psi> \<kappa> (\<C> @ [i]) \<phi> |
+        Cont (RollBackward p) \<Rightarrow>
+          client_program \<psi> \<kappa> (roll_back \<psi> \<C> p) \<phi> |
+        Cont AwaitReply \<Rightarrow> \<comment> \<open>client is up to date\<close>
+          \<up> Done;
+          \<bottom>
+      )
+   )"
 
 definition index_of :: "'p \<Rightarrow> 'i list \<Rightarrow> ('i \<Rightarrow> 'p) \<Rightarrow> nat" where
   [simp]: "index_of p \<C> \<psi> = (THE k. \<psi> (\<C> ! k) = p)"
