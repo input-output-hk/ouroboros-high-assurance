@@ -11,8 +11,8 @@ theory "Ouroboros-Mini_Protocols-Chain_Sync"
 begin
 
 locale chain_sync =
-  fixes initial_client_items :: "'i list"
-  fixes initial_server_items :: "'i list"
+  fixes initial_client_chain :: "'i list"
+  fixes initial_server_chain :: "'i list"
   fixes candidate_points :: "'i list \<Rightarrow> 'p list"
   fixes best_intersection_point :: "'i list \<Rightarrow> 'p list \<Rightarrow> 'p option"
   fixes point_of :: "'i \<Rightarrow> 'p"
@@ -77,30 +77,30 @@ subsection \<open>Programs\<close>
 
 datatype phase =
   is_intersection_finding: IntersectionFinding |
-  is_items_update: ItemsUpdate
+  is_chain_update: ChainUpdate
 
 definition roll_back_to :: "'i list \<Rightarrow> 'p \<Rightarrow> ('i \<Rightarrow> 'p) \<Rightarrow> 'i list" where
-  [simp]: "roll_back_to \<I> p \<psi> = (THE \<I>\<^sub>1. \<exists>\<I>\<^sub>2. \<I> = \<I>\<^sub>1 @ \<I>\<^sub>2 \<and> \<psi> (last \<I>\<^sub>1) = p)"
+  [simp]: "roll_back_to \<C> p \<psi> = (THE \<C>\<^sub>1. \<exists>\<C>\<^sub>2. \<C> = \<C>\<^sub>1 @ \<C>\<^sub>2 \<and> \<psi> (last \<C>\<^sub>1) = p)"
 
 corec client_program where
-  "client_program ph \<kappa> \<psi> \<I> = (
+  "client_program ph \<kappa> \<psi> \<C> = (
     case ph of
       IntersectionFinding \<Rightarrow>
-        \<up> Cont (FindIntersect (\<kappa> \<I>));
+        \<up> Cont (FindIntersect (\<kappa> \<C>));
         \<down> M; (partial_case M of
           Cont IntersectNotFound \<Rightarrow>
             \<up> Done;
             \<bottom> |
           Cont (IntersectFound _) \<Rightarrow>
-            client_program ItemsUpdate \<kappa> \<psi> \<I>
+            client_program ChainUpdate \<kappa> \<psi> \<C>
         ) |
-      ItemsUpdate \<Rightarrow>
+      ChainUpdate \<Rightarrow>
         \<up> Cont RequestNext;
         \<down> M; (partial_case M of
           Cont (RollForward i) \<Rightarrow>
-            client_program ph \<kappa> \<psi> (\<I> @ [i]) |
+            client_program ph \<kappa> \<psi> (\<C> @ [i]) |
           Cont (RollBackward p) \<Rightarrow>
-            client_program ph \<kappa> \<psi> (roll_back_to \<I> p \<psi>) |
+            client_program ph \<kappa> \<psi> (roll_back_to \<C> p \<psi>) |
           Cont AwaitReply \<Rightarrow> \<comment> \<open>client is up to date\<close>
             \<up> Done;
             \<bottom>
@@ -108,63 +108,63 @@ corec client_program where
     )"
 
 definition index_of :: "'p \<Rightarrow> 'i list \<Rightarrow> ('i \<Rightarrow> 'p) \<Rightarrow> nat" where
-  [simp]: "index_of p \<I> \<psi> = (THE k. \<psi> (\<I> ! k) = p)"
+  [simp]: "index_of p \<C> \<psi> = (THE k. \<psi> (\<C> ! k) = p)"
 
 corec server_program where
-  "server_program rp mrb \<rho> \<psi> \<I> =
+  "server_program rp mrb \<rho> \<psi> \<C> =
     \<down> M; (partial_case M of
       Done \<Rightarrow>
         \<bottom> |
       Cont (FindIntersect ps) \<Rightarrow> (
-        case \<rho> \<I> ps of
+        case \<rho> \<C> ps of
           None \<Rightarrow>
             \<up> Cont IntersectNotFound;
-            server_program rp mrb \<rho> \<psi> \<I> |
+            server_program rp mrb \<rho> \<psi> \<C> |
           Some p \<Rightarrow>
             \<up> Cont (IntersectFound p);
-            server_program (index_of p \<I> \<psi>) True \<rho> \<psi> \<I>
+            server_program (index_of p \<C> \<psi>) True \<rho> \<psi> \<C>
       ) |
       Cont RequestNext \<Rightarrow>
         if mrb then
-          \<up> Cont (RollBackward (\<psi> (\<I> ! rp)));
-          server_program (Suc rp) False \<rho> \<psi> \<I>
+          \<up> Cont (RollBackward (\<psi> (\<C> ! rp)));
+          server_program (Suc rp) False \<rho> \<psi> \<C>
         else
-          if rp < length \<I> then
-            \<up> Cont (RollForward (\<I> ! rp));
-            server_program (Suc rp) mrb \<rho> \<psi> \<I>
+          if rp < length \<C> then
+            \<up> Cont (RollForward (\<C> ! rp));
+            server_program (Suc rp) mrb \<rho> \<psi> \<C>
           else \<comment> \<open>client is up to date\<close>
             \<up> Cont AwaitReply;
-            server_program rp mrb \<rho> \<psi> \<I>
+            server_program rp mrb \<rho> \<psi> \<C>
     )"
 
 context chain_sync
 begin
 
 primrec program where
-  "program Client = client_program IntersectionFinding candidate_points point_of initial_client_items" |
-  "program Server = server_program 0 False best_intersection_point point_of initial_server_items"
+  "program Client = client_program IntersectionFinding candidate_points point_of initial_client_chain" |
+  "program Server = server_program 0 False best_intersection_point point_of initial_server_chain"
 
 end
 
 sublocale chain_sync \<subseteq> protocol_programs \<open>possibilities\<close> \<open>program\<close>
 proof
   have "
-    client_program phase candidate_points point_of initial_client_items
+    client_program phase candidate_points point_of initial_client_chain
     \<Colon>\<^bsub>Client\<^esub>
     Cont possibilities" for phase
     by
-      (coinduction arbitrary: initial_client_items phase rule: up_to_embedding_is_sound)
+      (coinduction arbitrary: initial_client_chain phase rule: up_to_embedding_is_sound)
       (state_machine_bisimulation
         program_expansion: client_program.code
         extra_splits: or_done.splits message.splits phase.splits
       )
   moreover
   have "
-    server_program read_ptr must_roll_back best_intersection_point point_of initial_server_items
+    server_program read_ptr must_roll_back best_intersection_point point_of initial_server_chain
     \<Colon>\<^bsub>Server\<^esub>
     Cont possibilities" for read_ptr and must_roll_back
     by
-      (coinduction arbitrary: initial_server_items read_ptr must_roll_back rule: up_to_embedding_is_sound)
+      (coinduction arbitrary: initial_server_chain read_ptr must_roll_back rule: up_to_embedding_is_sound)
       (state_machine_bisimulation
         program_expansion: server_program.code
         extra_splits: or_done.splits message.splits option.splits
