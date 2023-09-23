@@ -43,8 +43,8 @@ inductive can_finish_in_state' where
 declare can_finish_in_state'.simps [simp]
 
 primrec next_state' where
-  "next_state' Idle m = (partial_case m of (Req _) \<Rightarrow> Busy)" |
-  "next_state' Busy m = (partial_case m of (Resp _) \<Rightarrow> Idle)"
+  "next_state' Idle m = (partial_case m of Req _ \<Rightarrow> Busy)" |
+  "next_state' Busy m = (partial_case m of Resp _ \<Rightarrow> Idle)"
 
 definition state_machine where
   [simp]: "state_machine = \<lparr>
