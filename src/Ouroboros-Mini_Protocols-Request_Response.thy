@@ -23,7 +23,7 @@ datatype party =
   Client |
   Server
 
-subsection \<open>State Machines\<close>
+subsection \<open>State Machine\<close>
 
 datatype state =
   Idle |
