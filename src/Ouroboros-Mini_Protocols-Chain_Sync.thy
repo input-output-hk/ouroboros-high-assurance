@@ -105,7 +105,7 @@ corec client_program where
           \<up> Done;
           \<bottom>
       )
-   )"
+  )"
 
 definition index :: "('i \<Rightarrow> 'p) \<Rightarrow> 'p \<Rightarrow> 'i list \<Rightarrow> nat" where
   [simp]: "index \<psi> p \<C> = (THE k. \<psi> (\<C> ! k) = p)"
