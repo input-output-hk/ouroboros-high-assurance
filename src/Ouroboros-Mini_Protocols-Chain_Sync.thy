@@ -110,7 +110,7 @@ definition index :: "('i \<Rightarrow> 'p) \<Rightarrow> 'p \<Rightarrow> 'i lis
   [simp]: "index \<psi> p \<C> = (THE k. \<psi> (\<C> ! k) = p)"
 
 definition first_intersection_point :: "('i \<Rightarrow> 'p) \<Rightarrow> 'p list \<Rightarrow> 'i list \<Rightarrow> 'p option" where
-  [simp]: "first_intersection_point \<psi> ps \<C>  = find (\<lambda>p. p \<in> set (map \<psi> \<C>)) ps"
+  [simp]: "first_intersection_point \<psi> ps \<C>  = find (\<lambda>p. p \<in> \<psi> ` set \<C>) ps"
 
 corec server_program where
   "server_program \<psi> \<C> rp mrb =
