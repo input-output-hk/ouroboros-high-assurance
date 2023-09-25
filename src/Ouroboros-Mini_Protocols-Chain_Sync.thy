@@ -114,29 +114,29 @@ definition first_intersection_point :: "('i \<Rightarrow> 'p) \<Rightarrow> 'p l
   [simp]: "first_intersection_point \<psi> ps \<C>  = find (\<lambda>p. p \<in> \<psi> ` set \<C>) ps"
 
 corec server_program where
-  "server_program \<psi> \<C> rp mrb =
+  "server_program \<psi> \<C> k r =
     \<down> M; (partial_case M of
       Done \<Rightarrow>
         \<bottom> |
       Cont (FindIntersect ps) \<Rightarrow> (case first_intersection_point \<psi> ps \<C> of
         None \<Rightarrow>
           \<up> Cont IntersectNotFound;
-          server_program \<psi> \<C> rp mrb |
+          server_program \<psi> \<C> k r |
         Some p \<Rightarrow>
           \<up> Cont (IntersectFound p);
           server_program \<psi> \<C> (index \<psi> p \<C>) True
       ) |
       Cont RequestNext \<Rightarrow>
-        if mrb then
-          \<up> Cont (RollBackward (\<psi> (\<C> ! rp)));
-          server_program \<psi> \<C> (Suc rp) False
+        if r then
+          \<up> Cont (RollBackward (\<psi> (\<C> ! k)));
+          server_program \<psi> \<C> (Suc k) False
         else
-          if rp < length \<C> then
-            \<up> Cont (RollForward (\<C> ! rp));
-            server_program \<psi> \<C> (Suc rp) mrb
+          if k < length \<C> then
+            \<up> Cont (RollForward (\<C> ! k));
+            server_program \<psi> \<C> (Suc k) r
           else \<comment> \<open>only for this initial implementation\<close>
             \<up> Cont AwaitReply;
-            server_program \<psi> \<C> rp mrb
+            server_program \<psi> \<C> k r
     )"
 
 context chain_sync
