@@ -7,6 +7,7 @@ text \<open>
 theory "Ouroboros-Mini_Protocols-Chain_Sync"
   imports
     "Ouroboros-Mini_Protocols"
+    "HOL-Library.Sublist"
     "HOL-Library.BNF_Corec"
 begin
 
@@ -76,7 +77,7 @@ sublocale chain_sync \<subseteq> protocol_state_machine \<open>state_machine\<cl
 subsection \<open>Programs\<close>
 
 definition roll_back :: "('i \<Rightarrow> 'p) \<Rightarrow> 'i list \<Rightarrow> 'p \<Rightarrow> 'i list" where
-  [simp]: "roll_back \<psi> \<C> p = (THE \<C>\<^sub>1. (\<exists>\<C>\<^sub>2. \<C> = \<C>\<^sub>1 @ \<C>\<^sub>2) \<and> \<psi> (last \<C>\<^sub>1) = p)"
+  [simp]: "roll_back \<psi> \<C> p = (THE \<C>\<^sub>1. prefix \<C>\<^sub>1 \<C> \<and> \<psi> (last \<C>\<^sub>1) = p)"
 
 datatype phase =
   is_intersection_finding: IntersectionFinding |
