@@ -7,8 +7,8 @@ text \<open>
 theory "Ouroboros-Mini_Protocols-Chain_Sync"
   imports
     "Ouroboros-Mini_Protocols"
-    "HOL-Library.Sublist"
     "HOL-Library.BNF_Corec"
+    "HOL-Library.Sublist"
 begin
 
 locale chain_sync =
