@@ -132,12 +132,12 @@ corec server_program where
           \<up> Cont (RollBackward (\<psi> (C ! k)));
           server_program \<psi> C (Suc k) False
         else
-          if k < length C then
-            \<up> Cont (RollForward (C ! k));
-            server_program \<psi> C (Suc k) b
-          else \<comment> \<open>only for this initial implementation\<close>
-            \<up> Cont AwaitReply;
-            server_program \<psi> C k b
+        if k < length C then
+          \<up> Cont (RollForward (C ! k));
+          server_program \<psi> C (Suc k) b
+        else \<comment> \<open>only for this initial implementation\<close>
+          \<up> Cont AwaitReply;
+          server_program \<psi> C k b
     )"
 
 context chain_sync
