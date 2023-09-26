@@ -118,14 +118,15 @@ corec server_program where
     \<down> M; (partial_case M of
       Done \<Rightarrow>
         \<bottom> |
-      Cont (FindIntersect qs) \<Rightarrow> (case first_intersection_point \<psi> qs C of
-        None \<Rightarrow>
-          \<up> Cont IntersectNotFound;
-          server_program \<psi> C k r |
-        Some q \<Rightarrow>
-          \<up> Cont (IntersectFound q);
-          server_program \<psi> C (index \<psi> q C) True
-      ) |
+      Cont (FindIntersect qs) \<Rightarrow>
+        (case first_intersection_point \<psi> qs C of
+          None \<Rightarrow>
+            \<up> Cont IntersectNotFound;
+            server_program \<psi> C k r |
+          Some q \<Rightarrow>
+            \<up> Cont (IntersectFound q);
+            server_program \<psi> C (index \<psi> q C) True
+        ) |
       Cont RequestNext \<Rightarrow>
         if r then
           \<up> Cont (RollBackward (\<psi> (C ! k)));
