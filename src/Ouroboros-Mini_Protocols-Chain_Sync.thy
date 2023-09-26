@@ -77,7 +77,7 @@ sublocale chain_sync \<subseteq> protocol_state_machine \<open>state_machine\<cl
 subsection \<open>Programs\<close>
 
 definition roll_back :: "('i \<Rightarrow> 'q) \<Rightarrow> 'i list \<Rightarrow> 'q \<Rightarrow> 'i list" where
-  [simp]: "roll_back \<psi> \<C> q = (THE \<C>\<^sub>1. prefix \<C>\<^sub>1 \<C> \<and> \<psi> (last \<C>\<^sub>1) = q)"
+  [simp]: "roll_back \<psi> \<C> q = (THE \<C>'. prefix \<C>' \<C> \<and> \<psi> (last \<C>') = q)"
 
 datatype phase =
   is_intersection_finding: IntersectionFinding |
