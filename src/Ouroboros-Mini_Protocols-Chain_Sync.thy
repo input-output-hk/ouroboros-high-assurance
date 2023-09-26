@@ -114,7 +114,7 @@ definition first_intersection_point :: "('i \<Rightarrow> 'q) \<Rightarrow> 'q l
   [simp]: "first_intersection_point \<psi> qs C  = find (\<lambda>q. q \<in> \<psi> ` set C) qs"
 
 corec server_program where
-  "server_program \<psi> C k r =
+  "server_program \<psi> C k b =
     \<down> M; (partial_case M of
       Done \<Rightarrow>
         \<bottom> |
@@ -122,22 +122,22 @@ corec server_program where
         (case first_intersection_point \<psi> qs C of
           None \<Rightarrow>
             \<up> Cont IntersectNotFound;
-            server_program \<psi> C k r |
+            server_program \<psi> C k b |
           Some q \<Rightarrow>
             \<up> Cont (IntersectFound q);
             server_program \<psi> C (index \<psi> q C) True
         ) |
       Cont RequestNext \<Rightarrow>
-        if r then
+        if b then
           \<up> Cont (RollBackward (\<psi> (C ! k)));
           server_program \<psi> C (Suc k) False
         else
           if k < length C then
             \<up> Cont (RollForward (C ! k));
-            server_program \<psi> C (Suc k) r
+            server_program \<psi> C (Suc k) b
           else \<comment> \<open>only for this initial implementation\<close>
             \<up> Cont AwaitReply;
-            server_program \<psi> C k r
+            server_program \<psi> C k b
     )"
 
 context chain_sync
