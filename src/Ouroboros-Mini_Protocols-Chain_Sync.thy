@@ -77,30 +77,30 @@ sublocale chain_sync \<subseteq> protocol_state_machine \<open>state_machine\<cl
 subsection \<open>Programs\<close>
 
 definition roll_back :: "('i \<Rightarrow> 'q) \<Rightarrow> 'i list \<Rightarrow> 'q \<Rightarrow> 'i list" where
-  [simp]: "roll_back \<psi> \<C> q = (THE \<C>'. prefix \<C>' \<C> \<and> \<psi> (last \<C>') = q)"
+  [simp]: "roll_back \<psi> C q = (THE C'. prefix C' C \<and> \<psi> (last C') = q)"
 
 datatype phase =
   is_intersection_finding: IntersectionFinding |
   is_chain_update: ChainUpdate
 
 corec client_program where
-  "client_program \<psi> \<kappa> \<C> \<phi> = (case \<phi> of
+  "client_program \<psi> \<kappa> C \<phi> = (case \<phi> of
     IntersectionFinding \<Rightarrow>
-      \<up> Cont (FindIntersect (\<kappa> \<C>));
+      \<up> Cont (FindIntersect (\<kappa> C));
       \<down> M; (partial_case M of
         Cont IntersectNotFound \<Rightarrow>
           \<up> Done;
           \<bottom> |
         Cont (IntersectFound _) \<Rightarrow>
-          client_program \<psi> \<kappa> \<C> ChainUpdate
+          client_program \<psi> \<kappa> C ChainUpdate
       ) |
     ChainUpdate \<Rightarrow>
       \<up> Cont RequestNext;
       \<down> M; (partial_case M of
         Cont (RollForward i) \<Rightarrow>
-          client_program \<psi> \<kappa> (\<C> @ [i]) \<phi> |
+          client_program \<psi> \<kappa> (C @ [i]) \<phi> |
         Cont (RollBackward q) \<Rightarrow>
-          client_program \<psi> \<kappa> (roll_back \<psi> \<C> q) \<phi> |
+          client_program \<psi> \<kappa> (roll_back \<psi> C q) \<phi> |
         Cont AwaitReply \<Rightarrow> \<comment> \<open>only for this initial implementation\<close>
           \<up> Done;
           \<bottom>
@@ -108,35 +108,35 @@ corec client_program where
   )"
 
 definition index :: "('i \<Rightarrow> 'q) \<Rightarrow> 'q \<Rightarrow> 'i list \<Rightarrow> nat" where
-  [simp]: "index \<psi> q \<C> = (THE k. \<psi> (\<C> ! k) = q)"
+  [simp]: "index \<psi> q C = (THE k. \<psi> (C ! k) = q)"
 
 definition first_intersection_point :: "('i \<Rightarrow> 'q) \<Rightarrow> 'q list \<Rightarrow> 'i list \<Rightarrow> 'q option" where
-  [simp]: "first_intersection_point \<psi> qs \<C>  = find (\<lambda>q. q \<in> \<psi> ` set \<C>) qs"
+  [simp]: "first_intersection_point \<psi> qs C  = find (\<lambda>q. q \<in> \<psi> ` set C) qs"
 
 corec server_program where
-  "server_program \<psi> \<C> k r =
+  "server_program \<psi> C k r =
     \<down> M; (partial_case M of
       Done \<Rightarrow>
         \<bottom> |
-      Cont (FindIntersect qs) \<Rightarrow> (case first_intersection_point \<psi> qs \<C> of
+      Cont (FindIntersect qs) \<Rightarrow> (case first_intersection_point \<psi> qs C of
         None \<Rightarrow>
           \<up> Cont IntersectNotFound;
-          server_program \<psi> \<C> k r |
+          server_program \<psi> C k r |
         Some q \<Rightarrow>
           \<up> Cont (IntersectFound q);
-          server_program \<psi> \<C> (index \<psi> q \<C>) True
+          server_program \<psi> C (index \<psi> q C) True
       ) |
       Cont RequestNext \<Rightarrow>
         if r then
-          \<up> Cont (RollBackward (\<psi> (\<C> ! k)));
-          server_program \<psi> \<C> (Suc k) False
+          \<up> Cont (RollBackward (\<psi> (C ! k)));
+          server_program \<psi> C (Suc k) False
         else
-          if k < length \<C> then
-            \<up> Cont (RollForward (\<C> ! k));
-            server_program \<psi> \<C> (Suc k) r
+          if k < length C then
+            \<up> Cont (RollForward (C ! k));
+            server_program \<psi> C (Suc k) r
           else \<comment> \<open>only for this initial implementation\<close>
             \<up> Cont AwaitReply;
-            server_program \<psi> \<C> k r
+            server_program \<psi> C k r
     )"
 
 context chain_sync
