@@ -21,6 +21,8 @@ locale chain_sync =
   fixes candidate_points :: "'i list \<Rightarrow> 'q list"
   fixes initial_client_chain :: "'i list"
   fixes initial_server_chain :: "'i list"
+  assumes "initial_client_chain \<noteq> []"
+  assumes "initial_server_chain \<noteq> []"
 
 subsection \<open>Parties\<close>
 
