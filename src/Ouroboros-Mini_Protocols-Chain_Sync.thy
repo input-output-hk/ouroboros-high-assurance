@@ -12,8 +12,8 @@ theory "Ouroboros-Mini_Protocols-Chain_Sync"
 begin
 
 locale chain_sync =
-  fixes point :: "'i \<Rightarrow> 'p"
-  fixes candidate_points :: "'i list \<Rightarrow> 'p list"
+  fixes point :: "'i \<Rightarrow> 'q"
+  fixes candidate_points :: "'i list \<Rightarrow> 'q list"
   fixes initial_client_chain :: "'i list"
   fixes initial_server_chain :: "'i list"
 
@@ -30,13 +30,13 @@ datatype state =
   Intersect |
   CanAwait
 
-datatype ('i, 'p) message =
-  is_find_intersect: FindIntersect \<open>'p list\<close> |
-  is_intersect_found: IntersectFound \<open>'p\<close> |
+datatype ('i, 'q) message =
+  is_find_intersect: FindIntersect \<open>'q list\<close> |
+  is_intersect_found: IntersectFound \<open>'q\<close> |
   is_intersect_not_found: IntersectNotFound |
   is_request_next: RequestNext |
   is_roll_forward: RollForward \<open>'i\<close> |
-  is_roll_backward: RollBackward \<open>'p\<close> |
+  is_roll_backward: RollBackward \<open>'q\<close> |
   is_await_reply: AwaitReply
 
 primrec agent_in_state' where
@@ -76,8 +76,8 @@ sublocale chain_sync \<subseteq> protocol_state_machine \<open>state_machine\<cl
 
 subsection \<open>Programs\<close>
 
-definition roll_back :: "('i \<Rightarrow> 'p) \<Rightarrow> 'i list \<Rightarrow> 'p \<Rightarrow> 'i list" where
-  [simp]: "roll_back \<psi> \<C> p = (THE \<C>\<^sub>1. prefix \<C>\<^sub>1 \<C> \<and> \<psi> (last \<C>\<^sub>1) = p)"
+definition roll_back :: "('i \<Rightarrow> 'q) \<Rightarrow> 'i list \<Rightarrow> 'q \<Rightarrow> 'i list" where
+  [simp]: "roll_back \<psi> \<C> q = (THE \<C>\<^sub>1. prefix \<C>\<^sub>1 \<C> \<and> \<psi> (last \<C>\<^sub>1) = q)"
 
 datatype phase =
   is_intersection_finding: IntersectionFinding |
@@ -99,32 +99,32 @@ corec client_program where
       \<down> M; (partial_case M of
         Cont (RollForward i) \<Rightarrow>
           client_program \<psi> \<kappa> (\<C> @ [i]) \<phi> |
-        Cont (RollBackward p) \<Rightarrow>
-          client_program \<psi> \<kappa> (roll_back \<psi> \<C> p) \<phi> |
+        Cont (RollBackward q) \<Rightarrow>
+          client_program \<psi> \<kappa> (roll_back \<psi> \<C> q) \<phi> |
         Cont AwaitReply \<Rightarrow> \<comment> \<open>only for this initial implementation\<close>
           \<up> Done;
           \<bottom>
       )
   )"
 
-definition index :: "('i \<Rightarrow> 'p) \<Rightarrow> 'p \<Rightarrow> 'i list \<Rightarrow> nat" where
-  [simp]: "index \<psi> p \<C> = (THE k. \<psi> (\<C> ! k) = p)"
+definition index :: "('i \<Rightarrow> 'q) \<Rightarrow> 'q \<Rightarrow> 'i list \<Rightarrow> nat" where
+  [simp]: "index \<psi> q \<C> = (THE k. \<psi> (\<C> ! k) = q)"
 
-definition first_intersection_point :: "('i \<Rightarrow> 'p) \<Rightarrow> 'p list \<Rightarrow> 'i list \<Rightarrow> 'p option" where
-  [simp]: "first_intersection_point \<psi> ps \<C>  = find (\<lambda>p. p \<in> \<psi> ` set \<C>) ps"
+definition first_intersection_point :: "('i \<Rightarrow> 'q) \<Rightarrow> 'q list \<Rightarrow> 'i list \<Rightarrow> 'q option" where
+  [simp]: "first_intersection_point \<psi> qs \<C>  = find (\<lambda>q. q \<in> \<psi> ` set \<C>) qs"
 
 corec server_program where
   "server_program \<psi> \<C> k r =
     \<down> M; (partial_case M of
       Done \<Rightarrow>
         \<bottom> |
-      Cont (FindIntersect ps) \<Rightarrow> (case first_intersection_point \<psi> ps \<C> of
+      Cont (FindIntersect qs) \<Rightarrow> (case first_intersection_point \<psi> qs \<C> of
         None \<Rightarrow>
           \<up> Cont IntersectNotFound;
           server_program \<psi> \<C> k r |
-        Some p \<Rightarrow>
-          \<up> Cont (IntersectFound p);
-          server_program \<psi> \<C> (index \<psi> p \<C>) True
+        Some q \<Rightarrow>
+          \<up> Cont (IntersectFound q);
+          server_program \<psi> \<C> (index \<psi> q \<C>) True
       ) |
       Cont RequestNext \<Rightarrow>
         if r then
