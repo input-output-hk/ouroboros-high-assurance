@@ -160,7 +160,7 @@ proof
       (coinduction arbitrary: initial_client_chain phase rule: up_to_embedding_is_sound)
       (state_machine_bisimulation
         program_expansion: client_program.code
-        extra_splits: or_done.splits message.splits phase.splits
+        extra_splits: phase.splits or_done.splits message.splits
       )
   moreover
   have "
