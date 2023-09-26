@@ -139,7 +139,7 @@ corec server_program where
       Cont RequestNext \<Rightarrow>
         if b then
           \<up> Cont (RollBackward (\<psi> (C ! k)));
-          server_program \<psi> C (Suc k) False
+          server_program \<psi> C k False
         else
         if Suc k < length C then
           \<up> Cont (RollForward (C ! Suc k));
