@@ -154,7 +154,8 @@ proof
   have "
     client_program point candidate_points initial_client_chain phase
     \<Colon>\<^bsub>Client\<^esub>
-    Cont possibilities" for phase
+    Cont possibilities"
+    for phase
     by
       (coinduction arbitrary: initial_client_chain phase rule: up_to_embedding_is_sound)
       (state_machine_bisimulation
@@ -165,7 +166,8 @@ proof
   have "
     server_program point initial_server_chain read_ptr must_roll_back
     \<Colon>\<^bsub>Server\<^esub>
-    Cont possibilities" for read_ptr and must_roll_back
+    Cont possibilities"
+    for read_ptr and must_roll_back
     by
       (coinduction arbitrary: initial_server_chain read_ptr must_roll_back rule: up_to_embedding_is_sound)
       (state_machine_bisimulation
