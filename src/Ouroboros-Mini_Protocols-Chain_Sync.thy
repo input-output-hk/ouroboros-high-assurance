@@ -140,8 +140,7 @@ corec server_program where
         if b then
           \<up> Cont (RollBackward (\<psi> (C ! k)));
           server_program \<psi> C k False
-        else
-        if Suc k < length C then
+        else if Suc k < length C then
           \<up> Cont (RollForward (C ! Suc k));
           server_program \<psi> C (Suc k) b
         else \<comment> \<open>only for this initial implementation\<close>
