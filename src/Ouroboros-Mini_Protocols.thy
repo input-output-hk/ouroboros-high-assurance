@@ -71,7 +71,7 @@ primrec permit :: "('p, 'm) possibilities \<Rightarrow> 'm or_done \<Rightarrow>
 text \<open>
   Based on this relation, we introduce a function that tells when message transmission will end the
   execution of the protocol and, in situations where it will not, what the possibilities afterwards
-  are.
+  will be.
 \<close>
 
 definition follow_up :: "('p, 'm) possibilities \<Rightarrow> 'm or_done \<Rightarrow> ('p, 'm) possibilities or_done" where
@@ -273,7 +273,7 @@ text \<open>
 \<close>
 
 lemma up_to_embedding_is_sound [case_names bisimulation]:
-  assumes "R \<Pi> \<P>" and "\<And>\<Pi> \<P>. R \<Pi> \<P> \<Longrightarrow> up_to_actual_embedding p R \<Pi> \<P>"
+  assumes "R \<Pi> \<P>" and bisimulation: "\<And>\<Pi> \<P>. R \<Pi> \<P> \<Longrightarrow> up_to_actual_embedding p R \<Pi> \<P>"
   shows "\<Pi> \<Colon>\<^bsub>p\<^esub> \<P>"
 proof -
   from \<open>R \<Pi> \<P>\<close> have \<open>up_to_embedding p R \<Pi> \<P>\<close>
@@ -284,7 +284,7 @@ proof -
     from \<open>up_to_embedding p R \<Pi> \<P>\<close> have "up_to_actual_embedding p R \<Pi> \<P>"
     proof cases
       case up_to_no_actual_embedding
-      with assms(2) show ?thesis .
+      with bisimulation show ?thesis .
     next
       case up_to_actual_embedding
       then show ?thesis .
@@ -295,8 +295,8 @@ proof -
 qed
 
 text \<open>
-  Note that the use of \<^const>\<open>up_to_actual_embedding\<close> in the bisimulation statement that is the
-  second assumption of \<^theory_text>\<open>up_to_embedding_is_sound\<close> captures two things:
+  Note that the use of \<^const>\<open>up_to_actual_embedding\<close> in the bisimulation assumption captures two
+  things:
 
     \<^item> Both terms make corresponding steps.
 
