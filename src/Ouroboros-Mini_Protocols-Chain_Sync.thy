@@ -119,7 +119,7 @@ corec client_program where
 definition index :: "('i \<Rightarrow> 'q) \<Rightarrow> 'q \<Rightarrow> 'i list \<Rightarrow> nat" where
   [simp]: "index \<psi> q C = (THE k. \<psi> (C ! k) = q)"
 
-definition first_intersection_point :: "('i \<Rightarrow> 'q) \<Rightarrow> 'q list \<Rightarrow> 'i list \<Rightarrow> 'q option" where
+definition first_intersection_point :: "('i \<Rightarrow> 'q) \<Rightarrow> 'q list \<Rightarrow> 'i list \<rightharpoonup> 'q" where
   [simp]: "first_intersection_point \<psi> qs C  = find (\<lambda>q. q \<in> \<psi> ` set C) qs"
 
 corec server_program where
