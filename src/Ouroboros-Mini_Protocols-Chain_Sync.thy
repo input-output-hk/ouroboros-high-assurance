@@ -13,7 +13,7 @@ begin
 
 locale chain_sync =
   fixes point :: "'i \<Rightarrow> 'q"
-  fixes candidate_points :: "'i list \<Rightarrow> 'q list"
+  fixes candidate_intersection_points :: "'i list \<Rightarrow> 'q list"
   fixes initial_client_chain :: "'i list"
   fixes initial_server_chain :: "'i list"
   assumes initial_client_chain_is_not_empty:
@@ -152,15 +152,17 @@ context chain_sync
 begin
 
 primrec program where
-  "program Client = client_program point candidate_points initial_client_chain IntersectionFinding" |
-  "program Server = server_program point initial_server_chain 0 False"
+  "program Client =
+    client_program point candidate_intersection_points initial_client_chain IntersectionFinding" |
+  "program Server =
+    server_program point initial_server_chain 0 False"
 
 end
 
 sublocale chain_sync \<subseteq> protocol_programs \<open>possibilities\<close> \<open>program\<close>
 proof
   have "
-    client_program point candidate_points initial_client_chain phase
+    client_program point candidate_intersection_points initial_client_chain phase
     \<Colon>\<^bsub>Client\<^esub>
     Cont possibilities"
     for phase
