@@ -14,5 +14,6 @@ session Ouroboros = HOL +
     "Ouroboros-Mini_Protocols"
     "Ouroboros-Mini_Protocols-Ping_Pong"
     "Ouroboros-Mini_Protocols-Request_Response"
+    "Ouroboros-Mini_Protocols-Chain_Sync"
   document_files
     "root.tex"
