@@ -11,11 +11,6 @@ theory "Ouroboros-Mini_Protocols-Chain_Sync"
     "HOL-Library.Sublist"
 begin
 
-text \<open>
-  We use the type variable~\<^typ>\<open>'i\<close> to refer to items stored in chains (normally headers and blocks),
-  and the type variable~\<^typ>\<open>'q\<close> to refer to points.
-\<close>
-
 locale chain_sync =
   fixes point :: "'i \<Rightarrow> 'q"
   fixes candidate_points :: "'i list \<Rightarrow> 'q list"
@@ -25,6 +20,11 @@ locale chain_sync =
     "initial_client_chain \<noteq> []"
   assumes initial_server_chain_is_not_empty:
     "initial_server_chain \<noteq> []"
+
+text \<open>
+  We use~\<^typ>\<open>'i\<close> to refer to items stored in chains, which are normally either headers or
+  blocks, and~\<^typ>\<open>'q\<close> to refer to points.
+\<close>
 
 subsection \<open>Parties\<close>
 
