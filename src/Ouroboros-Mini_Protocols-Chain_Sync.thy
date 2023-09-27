@@ -174,12 +174,15 @@ proof
       )
   moreover
   have "
-    server_program point initial_server_chain read_ptr must_roll_back
+    server_program point initial_server_chain read_pointer must_roll_back
     \<Colon>\<^bsub>Server\<^esub>
     Cont possibilities"
-    for read_ptr and must_roll_back
+    for read_pointer and must_roll_back
     by
-      (coinduction arbitrary: initial_server_chain read_ptr must_roll_back rule: up_to_embedding_is_sound)
+      (coinduction
+        arbitrary: initial_server_chain read_pointer must_roll_back
+        rule: up_to_embedding_is_sound
+      )
       (state_machine_bisimulation
         program_expansion: server_program.code
         extra_splits: or_done.splits message.splits option.splits
