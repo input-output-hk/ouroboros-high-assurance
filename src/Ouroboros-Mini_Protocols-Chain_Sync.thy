@@ -96,7 +96,7 @@ corec client_program where
   "client_program \<psi> \<kappa> C \<phi> = (case \<phi> of
     IntersectionFinding \<Rightarrow>
       \<up> Cont (FindIntersect (\<kappa> C));
-      \<down> M; (partial_case M of
+      \<down> M. (partial_case M of
         Cont IntersectNotFound \<Rightarrow>
           \<up> Done;
           \<bottom> |
@@ -105,7 +105,7 @@ corec client_program where
       ) |
     ChainUpdate \<Rightarrow>
       \<up> Cont RequestNext;
-      \<down> M; (partial_case M of
+      \<down> M. (partial_case M of
         Cont (RollForward i) \<Rightarrow>
           client_program \<psi> \<kappa> (C @ [i]) \<phi> |
         Cont (RollBackward q) \<Rightarrow>
@@ -124,7 +124,7 @@ definition first_intersection_point :: "('i \<Rightarrow> 'q) \<Rightarrow> 'q l
 
 corec server_program where
   "server_program \<psi> C k b =
-    \<down> M; (partial_case M of
+    \<down> M. (partial_case M of
       Done \<Rightarrow>
         \<bottom> |
       Cont (FindIntersect qs) \<Rightarrow>

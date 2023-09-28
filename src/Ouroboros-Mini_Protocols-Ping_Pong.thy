@@ -61,14 +61,14 @@ corec client_program where
       \<bottom> |
     Suc k \<Rightarrow>
       \<up> Cont Ping;
-      \<down> M; (partial_case M of
+      \<down> M. (partial_case M of
         Cont Pong \<Rightarrow> client_program k
       )
   )"
 
 corec server_program where
   "server_program =
-    \<down> M; (partial_case M of
+    \<down> M. (partial_case M of
       Done \<Rightarrow>
         \<bottom> |
       Cont Ping \<Rightarrow>

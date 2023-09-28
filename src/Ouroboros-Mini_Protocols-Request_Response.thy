@@ -65,14 +65,14 @@ corec client_program where
       \<bottom> |
     Some (x, d\<^sub>c') \<Rightarrow>
       \<up> Cont (Req x);
-      \<down> M; (partial_case M of
+      \<down> M. (partial_case M of
         Cont (Resp y) \<Rightarrow> client_program (\<rho> y d\<^sub>c') \<sigma> \<rho>
       )
   )"
 
 corec server_program where
   "server_program d\<^sub>s \<kappa> =
-    \<down> M; (partial_case M of
+    \<down> M. (partial_case M of
       Done \<Rightarrow>
         \<bottom> |
       Cont (Req x) \<Rightarrow>

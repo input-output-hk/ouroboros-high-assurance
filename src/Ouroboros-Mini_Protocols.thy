@@ -142,9 +142,9 @@ codatatype 'M program =
 
 syntax
   "_Await" :: "pttrn \<Rightarrow> 'M program \<Rightarrow> 'M program"
-  (\<open>\<down> _;/ _\<close> [0, 55] 55)
+  (\<open>\<down> _./ _\<close> [0, 55] 55)
 translations
-  "\<down> M; \<Pi>" \<rightleftharpoons> "CONST Await (\<lambda>M. \<Pi>)"
+  "\<down> M. \<Pi>" \<rightleftharpoons> "CONST Await (\<lambda>M. \<Pi>)"
 print_translation \<open>
   [Syntax_Trans.preserve_binder_abs_tr' \<^const_syntax>\<open>Await\<close> \<^syntax_const>\<open>_Await\<close>]
 \<close>
@@ -191,7 +191,7 @@ where
     "\<up> M; \<Pi> \<Colon>\<^bsub>p\<^esub> Cont P"
       if "agent P = p" and "P \<turnstile> M" and "\<Pi> \<Colon>\<^bsub>p\<^esub> follow_up P M" |
   await_conformance:
-    "\<down> M; \<Xi> M \<Colon>\<^bsub>p\<^esub> Cont P"
+    "\<down> M. \<Xi> M \<Colon>\<^bsub>p\<^esub> Cont P"
       if "agent P \<noteq> p" and "dom \<Xi> = {M. P \<turnstile> M}" and "\<forall>M \<in> dom \<Xi>. the (\<Xi> M) \<Colon>\<^bsub>p\<^esub> follow_up P M"
 
 text \<open>
@@ -259,7 +259,7 @@ where
       and
         "up_to_embedding p R \<Pi> (follow_up P M)" |
   up_to_await_embedding:
-    "up_to_actual_embedding p R (\<down> M; \<Xi> M) (Cont P)"
+    "up_to_actual_embedding p R (\<down> M. \<Xi> M) (Cont P)"
       if
         "agent P \<noteq> p"
       and
