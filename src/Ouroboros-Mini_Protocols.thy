@@ -137,28 +137,28 @@ text \<open>
 
 codatatype 'M program =
   Finish (\<open>\<bottom>\<close>) |
-  Send \<open>'M\<close> \<open>'M program\<close> (\<open>\<up> _;/ _\<close> [0, 55] 55) |
-  Receive \<open>'M \<rightharpoonup> 'M program\<close>
+  Yield \<open>'M\<close> \<open>'M program\<close> (\<open>\<up> _;/ _\<close> [0, 55] 55) |
+  Await \<open>'M \<rightharpoonup> 'M program\<close>
 
 syntax
-  "_Receive" :: "pttrn \<Rightarrow> 'M program \<Rightarrow> 'M program"
+  "_Await" :: "pttrn \<Rightarrow> 'M program \<Rightarrow> 'M program"
   (\<open>\<down> _;/ _\<close> [0, 55] 55)
 translations
-  "\<down> M; \<Pi>" \<rightleftharpoons> "CONST Receive (\<lambda>M. \<Pi>)"
+  "\<down> M; \<Pi>" \<rightleftharpoons> "CONST Await (\<lambda>M. \<Pi>)"
 print_translation \<open>
-  [Syntax_Trans.preserve_binder_abs_tr' \<^const_syntax>\<open>Receive\<close> \<^syntax_const>\<open>_Receive\<close>]
+  [Syntax_Trans.preserve_binder_abs_tr' \<^const_syntax>\<open>Await\<close> \<^syntax_const>\<open>_Await\<close>]
 \<close>
 
 text \<open>
   Note that we use the type variable~\<^typ>\<open>'M\<close> instead of~\<^typ>\<open>'m\<close> in the definition of
-  \<^type>\<open>program\<close> and the syntax declaration for \<^const>\<open>Receive\<close>. We do so to indicate that we
+  \<^type>\<open>program\<close> and the syntax declaration for \<^const>\<open>Await\<close>. We do so to indicate that we
   intend the corresponding type parameter to be instantiated with message types that include “done”
   messages, that is, types of the form \<^typ>\<open>'m or_done\<close>. It might have been better to enforce the
-  possibility of sending and receiving “done” messages by defining \<^type>\<open>program\<close> as follows:\<^theory_text>\<open>
+  possibility of yielding and awaiting “done” messages by defining \<^type>\<open>program\<close> as follows:\<^theory_text>\<open>
     codatatype 'm program =
       Finish (\<open>\<bottom>\<close>) |
-      Send \<open>'m or_done\<close> \<open>'m program\<close> (\<open>\<up> _;/ _\<close> [0, 55] 55) |
-      Receive \<open>'m or_done \<rightharpoonup> 'm program\<close>
+      Yield \<open>'m or_done\<close> \<open>'m program\<close> (\<open>\<up> _;/ _\<close> [0, 55] 55) |
+      Await \<open>'m or_done \<rightharpoonup> 'm program\<close>
   \<close>
   However, the construction of concrete programs will typically use the \<^emph>\<open>corec\<close> package, which in
   Isabelle2022 cannot cope with this definition. The relevant issues are being discussed in the
@@ -187,10 +187,10 @@ where
   "\<Pi> \<Colon>\<^bsub>p\<^esub> \<P> \<equiv> (\<Colon>\<^bsub>p\<^esub>) \<Pi> \<P>" |
   finish_conformance:
     "\<bottom> \<Colon>\<^bsub>p\<^esub> Done" |
-  send_conformance:
+  yield_conformance:
     "\<up> M; \<Pi> \<Colon>\<^bsub>p\<^esub> Cont P"
       if "agent P = p" and "P \<turnstile> M" and "\<Pi> \<Colon>\<^bsub>p\<^esub> follow_up P M" |
-  receive_conformance:
+  await_conformance:
     "\<down> M; \<Xi> M \<Colon>\<^bsub>p\<^esub> Cont P"
       if "agent P \<noteq> p" and "dom \<Xi> = {M. P \<turnstile> M}" and "\<forall>M \<in> dom \<Xi>. the (\<Xi> M) \<Colon>\<^bsub>p\<^esub> follow_up P M"
 
@@ -250,7 +250,7 @@ where
       if "up_to_actual_embedding p R \<Pi> \<P>" |
   up_to_finish_embedding:
     "up_to_actual_embedding p R \<bottom> Done" |
-  up_to_send_embedding:
+  up_to_yield_embedding:
     "up_to_actual_embedding p R (\<up> M; \<Pi>) (Cont P)"
       if
         "agent P = p"
@@ -258,7 +258,7 @@ where
         "P \<turnstile> M"
       and
         "up_to_embedding p R \<Pi> (follow_up P M)" |
-  up_to_receive_embedding:
+  up_to_await_embedding:
     "up_to_actual_embedding p R (\<down> M; \<Xi> M) (Cont P)"
       if
         "agent P \<noteq> p"
