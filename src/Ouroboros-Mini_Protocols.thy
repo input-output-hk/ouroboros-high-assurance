@@ -230,8 +230,8 @@ where
     "\<up> M; \<Pi> \<Colon>\<^bsub>p\<^esub> Cont P"
       if "agent P = p" and "P \<turnstile> M" and "\<Pi> \<Colon>\<^bsub>p\<^esub> follow_up P M" |
   await_conformance:
-    "\<down> M. \<Xi> M \<Colon>\<^bsub>p\<^esub> Cont P"
-      if "agent P \<noteq> p" and "dom \<Xi> = {M. P \<turnstile> M}" and "\<forall>M \<in> dom \<Xi>. the (\<Xi> M) \<Colon>\<^bsub>p\<^esub> follow_up P M" |
+    "\<down> M. \<OO> M \<Colon>\<^bsub>p\<^esub> Cont P"
+      if "agent P \<noteq> p" and "dom \<OO> = {M. P \<turnstile> M}" and "\<forall>M \<in> dom \<OO>. the (\<OO> M) \<Colon>\<^bsub>p\<^esub> follow_up P M" |
   export_conformance:
     "Export _ _ \<Pi> \<Colon>\<^bsub>p\<^esub> \<P>"
       if "\<Pi> \<Colon>\<^bsub>p\<^esub> \<P>" |
@@ -304,13 +304,13 @@ where
       and
         "up_to_embedding p R \<Pi> (follow_up P M)" |
   up_to_await_embedding:
-    "up_to_actual_embedding p R (\<down> M. \<Xi> M) (Cont P)"
+    "up_to_actual_embedding p R (\<down> M. \<OO> M) (Cont P)"
       if
         "agent P \<noteq> p"
       and
-        "dom \<Xi> = {M. P \<turnstile> M}"
+        "dom \<OO> = {M. P \<turnstile> M}"
       and
-        "\<forall>M \<in> dom \<Xi>. up_to_embedding p R (the (\<Xi> M)) (follow_up P M)" |
+        "\<forall>M \<in> dom \<OO>. up_to_embedding p R (the (\<OO> M)) (follow_up P M)" |
   up_to_export_embedding:
     "up_to_actual_embedding p R (Export _ _ \<Pi>) \<P>"
       if "up_to_embedding p R \<Pi> \<P>" |
