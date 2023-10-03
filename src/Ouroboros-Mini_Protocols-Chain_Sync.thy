@@ -11,6 +11,8 @@ theory "Ouroboros-Mini_Protocols-Chain_Sync"
     "HOL-Library.Sublist"
 begin
 
+hide_const (open) ZFC_in_HOL.set
+
 locale chain_sync =
   fixes point :: "'i \<Rightarrow> 'q"
   fixes candidate_intersection_points :: "'i list \<Rightarrow> 'q list"
