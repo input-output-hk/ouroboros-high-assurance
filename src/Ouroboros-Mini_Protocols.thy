@@ -140,6 +140,19 @@ subsection \<open>Programs\<close>
 
 text \<open>
   A program describes the part of the execution of a protocol that is performed by a single party.
+  Informally, the syntax and semantics of programs is as follows:
+
+    \<^item> \<open>\<bottom>\<close> does nothing.
+
+    \<^item> \<open>\<up> M; \<Pi>\<close> sends message~\<^term>\<open>M\<close> to all peers and continues like~\<^term>\<open>\<Pi>\<close>.
+
+    \<^item> \<open>\<down> M. \<OO> M\<close> receives a message~\<^term>\<open>M\<close> from a peer and continues like \<^term>\<open>the (\<OO> M)\<close>.
+
+    \<^item> \<open>a \<leftarrow> x; \<Pi>\<close> exports value~\<^term>\<open>x\<close> via synchronous channel~\<^term>\<open>a\<close> and continues
+      like~\<^term>\<open>\<Pi>\<close>.
+
+    \<^item> \<open>a \<rightarrow> x. \<PP> x\<close> imports a value~\<^term>\<open>x\<close> via synchronous channel~\<^term>\<open>a\<close> and continues
+      like \<^term>\<open>\<PP> x\<close>.
 \<close>
 
 codatatype 'M program =
