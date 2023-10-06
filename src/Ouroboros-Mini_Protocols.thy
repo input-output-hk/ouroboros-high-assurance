@@ -157,14 +157,14 @@ text \<open>
 
 codatatype 'M program =
   Finish (\<open>\<bottom>\<close>) |
-  Yield \<open>'M\<close> \<open>'M program\<close> (\<open>\<up> _;/ _\<close> [0, 55] 55) |
+  Yield \<open>'M\<close> \<open>'M program\<close> (\<open>(\<up> _;/ _)\<close> [0, 55] 55) |
   Await \<open>'M \<rightharpoonup> 'M program\<close> |
   Export \<open>sync_chan\<close> \<open>val\<close> \<open>'M program\<close> |
   Import \<open>sync_chan\<close> \<open>val \<Rightarrow> 'M program\<close>
 
 syntax
   "_Await" :: "pttrn \<Rightarrow> 'M program option \<Rightarrow> 'M program"
-  (\<open>\<down> _./ _\<close> [0, 55] 55)
+  (\<open>(3\<down> _./ _)\<close> [0, 55] 55)
 translations
   "\<down> M. \<Omega>" \<rightleftharpoons> "CONST Await (\<lambda>M. \<Omega>)"
 print_translation \<open>
@@ -181,7 +181,7 @@ text \<open>
 
 definition
   typed_export :: "'a sync_channel \<Rightarrow> 'a::embeddable \<Rightarrow> 'M program \<Rightarrow> 'M program"
-  (\<open>_ \<leftarrow> _;/ _\<close> [56, 0, 55] 55)
+  (\<open>(_ \<leftarrow> _;/ _)\<close> [56, 0, 55] 55)
 where
   [simp]: "typed_export a x \<Pi> = Export (sync_untyped a) (encode x) \<Pi>"
 
@@ -192,7 +192,7 @@ where
 
 syntax
   "_typed_import" :: "'a sync_channel \<Rightarrow> pttrn \<Rightarrow> 'M program \<Rightarrow> 'M program"
-  (\<open>_ \<rightarrow> _./ _\<close> [56, 0, 55] 55)
+  (\<open>(3_ \<rightarrow> _./ _)\<close> [56, 0, 55] 55)
 translations
   "a \<rightarrow> x. \<Pi>" \<rightleftharpoons> "CONST typed_import a (\<lambda>x. \<Pi>)"
 print_translation \<open>
