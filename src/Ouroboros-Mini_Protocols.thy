@@ -163,10 +163,10 @@ codatatype 'M program =
   Import \<open>sync_chan\<close> \<open>val \<Rightarrow> 'M program\<close>
 
 syntax
-  "_Await" :: "pttrn \<Rightarrow> 'M program \<Rightarrow> 'M program"
+  "_Await" :: "pttrn \<Rightarrow> 'M program option \<Rightarrow> 'M program"
   (\<open>\<down> _./ _\<close> [0, 55] 55)
 translations
-  "\<down> M. \<Pi>" \<rightleftharpoons> "CONST Await (\<lambda>M. \<Pi>)"
+  "\<down> M. \<Omega>" \<rightleftharpoons> "CONST Await (\<lambda>M. \<Omega>)"
 print_translation \<open>
   [Syntax_Trans.preserve_binder_abs_tr' \<^const_syntax>\<open>Await\<close> \<^syntax_const>\<open>_Await\<close>]
 \<close>
