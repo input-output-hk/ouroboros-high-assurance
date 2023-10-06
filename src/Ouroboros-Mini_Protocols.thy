@@ -9,8 +9,15 @@ text \<open>
 theory "Ouroboros-Mini_Protocols"
   imports
     Main
-    "HOL-Eisbach.Eisbach"
+    "Thorn_Calculus.Thorn_Calculus-Derived-Channels-Synchronous"
 begin
+
+text \<open>
+  We hide the \<open>\<Pi>\<close>-notation from \<^theory>\<open>HOL-Library.FuncSet\<close> to prevent clashes with~\<open>\<Pi>\<close> used
+  for programs.
+\<close>
+
+no_syntax "_Pi" :: "pttrn \<Rightarrow> 'a set \<Rightarrow> 'b set \<Rightarrow> ('a \<Rightarrow> 'b) set" (\<open>(3\<Pi> _\<in>_./ _)\<close> 10)
 
 subsection \<open>Inclusion of a “Done” Case\<close>
 
@@ -133,32 +140,77 @@ subsection \<open>Programs\<close>
 
 text \<open>
   A program describes the part of the execution of a protocol that is performed by a single party.
+  Informally, the syntax and semantics of programs is as follows:
+
+    \<^item> \<open>\<bottom>\<close> does nothing.
+
+    \<^item> \<open>\<up> M; \<Pi>\<close> sends message~\<^term>\<open>M\<close> to all peers and continues like~\<^term>\<open>\<Pi>\<close>.
+
+    \<^item> \<open>\<down> M. \<OO> M\<close> receives a message~\<^term>\<open>M\<close> from a peer and continues like \<^term>\<open>the (\<OO> M)\<close>.
+
+    \<^item> \<open>a \<leftarrow> x; \<Pi>\<close> exports value~\<^term>\<open>x\<close> via synchronous channel~\<^term>\<open>a\<close> and continues
+      like~\<^term>\<open>\<Pi>\<close>.
+
+    \<^item> \<open>a \<rightarrow> x. \<PP> x\<close> imports a value~\<^term>\<open>x\<close> via synchronous channel~\<^term>\<open>a\<close> and continues
+      like \<^term>\<open>\<PP> x\<close>.
 \<close>
 
 codatatype 'M program =
   Finish (\<open>\<bottom>\<close>) |
-  Send \<open>'M\<close> \<open>'M program\<close> (\<open>\<up> _;/ _\<close> [0, 55] 55) |
-  Receive \<open>'M \<rightharpoonup> 'M program\<close>
+  Yield \<open>'M\<close> \<open>'M program\<close> (\<open>\<up> _;/ _\<close> [0, 55] 55) |
+  Await \<open>'M \<rightharpoonup> 'M program\<close> |
+  Export \<open>sync_chan\<close> \<open>val\<close> \<open>'M program\<close> |
+  Import \<open>sync_chan\<close> \<open>val \<Rightarrow> 'M program\<close>
 
 syntax
-  "_Receive" :: "pttrn \<Rightarrow> 'M program \<Rightarrow> 'M program"
-  (\<open>\<down> _;/ _\<close> [0, 55] 55)
+  "_Await" :: "pttrn \<Rightarrow> 'M program \<Rightarrow> 'M program"
+  (\<open>\<down> _./ _\<close> [0, 55] 55)
 translations
-  "\<down> M; \<Pi>" \<rightleftharpoons> "CONST Receive (\<lambda>M. \<Pi>)"
+  "\<down> M. \<Pi>" \<rightleftharpoons> "CONST Await (\<lambda>M. \<Pi>)"
 print_translation \<open>
-  [Syntax_Trans.preserve_binder_abs_tr' \<^const_syntax>\<open>Receive\<close> \<^syntax_const>\<open>_Receive\<close>]
+  [Syntax_Trans.preserve_binder_abs_tr' \<^const_syntax>\<open>Await\<close> \<^syntax_const>\<open>_Await\<close>]
+\<close>
+
+text \<open>
+  The type \<^type>\<open>program\<close> has only untyped versions of export and import as data constructors,
+  because typed versions would have required support for existential types, which Isabelle/HOL does
+  not have. However, we can introduce typed versions of these constructs by wrapping the untyped
+  ones appropriately. This is analogous to what is done for the send and receive constructs of the
+  Þ-calculus.
+\<close>
+
+definition
+  typed_export :: "'a sync_channel \<Rightarrow> 'a::embeddable \<Rightarrow> 'M program \<Rightarrow> 'M program"
+  (\<open>_ \<leftarrow> _;/ _\<close> [56, 0, 55] 55)
+where
+  [simp]: "typed_export a x \<Pi> = Export (sync_untyped a) (encode x) \<Pi>"
+
+definition
+  typed_import :: "'a sync_channel \<Rightarrow> ('a::embeddable \<Rightarrow> 'M program) \<Rightarrow> 'M program"
+where
+  [simp]: "typed_import a \<PP> = Import (sync_untyped a) (\<PP> \<circ> decode)"
+
+syntax
+  "_typed_import" :: "'a sync_channel \<Rightarrow> pttrn \<Rightarrow> 'M program \<Rightarrow> 'M program"
+  (\<open>_ \<rightarrow> _./ _\<close> [56, 0, 55] 55)
+translations
+  "a \<rightarrow> x. \<Pi>" \<rightleftharpoons> "CONST typed_import a (\<lambda>x. \<Pi>)"
+print_translation \<open>
+  [preserve_binder_abs_receive_tr' \<^const_syntax>\<open>typed_import\<close> \<^syntax_const>\<open>_typed_import\<close>]
 \<close>
 
 text \<open>
   Note that we use the type variable~\<^typ>\<open>'M\<close> instead of~\<^typ>\<open>'m\<close> in the definition of
-  \<^type>\<open>program\<close> and the syntax declaration for \<^const>\<open>Receive\<close>. We do so to indicate that we
-  intend the corresponding type parameter to be instantiated with message types that include “done”
-  messages, that is, types of the form \<^typ>\<open>'m or_done\<close>. It might have been better to enforce the
-  possibility of sending and receiving “done” messages by defining \<^type>\<open>program\<close> as follows:\<^theory_text>\<open>
+  \<^type>\<open>program\<close> and the following specifications. We do so to indicate that we intend the
+  corresponding type parameter to be instantiated with message types that include “done” messages,
+  that is, types of the form \<^typ>\<open>'m or_done\<close>. It might have been better to enforce the
+  possibility of yielding and awaiting “done” messages by defining \<^type>\<open>program\<close> as follows:\<^theory_text>\<open>
     codatatype 'm program =
       Finish (\<open>\<bottom>\<close>) |
-      Send \<open>'m or_done\<close> \<open>'m program\<close> (\<open>\<up> _;/ _\<close> [0, 55] 55) |
-      Receive \<open>'m or_done \<rightharpoonup> 'm program\<close>
+      Yield \<open>'m or_done\<close> \<open>'m program\<close> (\<open>\<up> _;/ _\<close> [0, 55] 55) |
+      Await \<open>'m or_done \<rightharpoonup> 'm program\<close> |
+      Export \<open>sync_chan\<close> \<open>val\<close> \<open>'m program\<close> |
+      Import \<open>sync_chan\<close> \<open>val \<Rightarrow> 'm program\<close>
   \<close>
   However, the construction of concrete programs will typically use the \<^emph>\<open>corec\<close> package, which in
   Isabelle2022 cannot cope with this definition. The relevant issues are being discussed in the
@@ -187,12 +239,18 @@ where
   "\<Pi> \<Colon>\<^bsub>p\<^esub> \<P> \<equiv> (\<Colon>\<^bsub>p\<^esub>) \<Pi> \<P>" |
   finish_conformance:
     "\<bottom> \<Colon>\<^bsub>p\<^esub> Done" |
-  send_conformance:
+  yield_conformance:
     "\<up> M; \<Pi> \<Colon>\<^bsub>p\<^esub> Cont P"
       if "agent P = p" and "P \<turnstile> M" and "\<Pi> \<Colon>\<^bsub>p\<^esub> follow_up P M" |
-  receive_conformance:
-    "\<down> M; \<Xi> M \<Colon>\<^bsub>p\<^esub> Cont P"
-      if "agent P \<noteq> p" and "dom \<Xi> = {M. P \<turnstile> M}" and "\<forall>M \<in> dom \<Xi>. the (\<Xi> M) \<Colon>\<^bsub>p\<^esub> follow_up P M"
+  await_conformance:
+    "\<down> M. \<OO> M \<Colon>\<^bsub>p\<^esub> Cont P"
+      if "agent P \<noteq> p" and "dom \<OO> = {M. P \<turnstile> M}" and "\<forall>M \<in> dom \<OO>. the (\<OO> M) \<Colon>\<^bsub>p\<^esub> follow_up P M" |
+  export_conformance:
+    "Export _ _ \<Pi> \<Colon>\<^bsub>p\<^esub> \<P>"
+      if "\<Pi> \<Colon>\<^bsub>p\<^esub> \<P>" |
+  import_conformance:
+    "Import _ \<PP> \<Colon>\<^bsub>p\<^esub> \<P>"
+      if "\<And>x. \<PP> x \<Colon>\<^bsub>p\<^esub> \<P>"
 
 text \<open>
   A protocol is implemented by assigning programs to parties such that the programs communicate
@@ -250,7 +308,7 @@ where
       if "up_to_actual_embedding p R \<Pi> \<P>" |
   up_to_finish_embedding:
     "up_to_actual_embedding p R \<bottom> Done" |
-  up_to_send_embedding:
+  up_to_yield_embedding:
     "up_to_actual_embedding p R (\<up> M; \<Pi>) (Cont P)"
       if
         "agent P = p"
@@ -258,14 +316,20 @@ where
         "P \<turnstile> M"
       and
         "up_to_embedding p R \<Pi> (follow_up P M)" |
-  up_to_receive_embedding:
-    "up_to_actual_embedding p R (\<down> M; \<Xi> M) (Cont P)"
+  up_to_await_embedding:
+    "up_to_actual_embedding p R (\<down> M. \<OO> M) (Cont P)"
       if
         "agent P \<noteq> p"
       and
-        "dom \<Xi> = {M. P \<turnstile> M}"
+        "dom \<OO> = {M. P \<turnstile> M}"
       and
-        "\<forall>M \<in> dom \<Xi>. up_to_embedding p R (the (\<Xi> M)) (follow_up P M)"
+        "\<forall>M \<in> dom \<OO>. up_to_embedding p R (the (\<OO> M)) (follow_up P M)" |
+  up_to_export_embedding:
+    "up_to_actual_embedding p R (Export _ _ \<Pi>) \<P>"
+      if "up_to_embedding p R \<Pi> \<P>" |
+  up_to_import_embedding:
+    "up_to_actual_embedding p R (Import _ \<PP>) \<P>"
+      if "\<And>x. up_to_embedding p R (\<PP> x) \<P>"
 
 text \<open>
   Coinduction up to embedding is sound. The following lemma not only states this soundness but also
