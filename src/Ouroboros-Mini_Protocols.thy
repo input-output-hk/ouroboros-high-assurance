@@ -175,8 +175,8 @@ text \<open>
   The type \<^type>\<open>program\<close> has only untyped versions of export and import as data constructors,
   because typed versions would have required support for existential types, which Isabelle/HOL does
   not have. However, we can introduce typed versions of these constructs by wrapping the untyped
-  ones appropriately. This is analogous to what is done for the send and the receive construct of
-  the Þ-calculus.
+  ones appropriately. This is analogous to what is done for the send and receive constructs of the
+  Þ-calculus.
 \<close>
 
 definition
