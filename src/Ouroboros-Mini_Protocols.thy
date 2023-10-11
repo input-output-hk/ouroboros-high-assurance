@@ -179,16 +179,16 @@ text \<open>
   Þ-calculus.
 \<close>
 
-definition
+abbreviation
   typed_export :: "'a sync_channel \<Rightarrow> 'a::embeddable \<Rightarrow> 'M program \<Rightarrow> 'M program"
   (\<open>(_ \<leftarrow> _;/ _)\<close> [56, 0, 55] 55)
 where
-  [simp]: "typed_export a x \<Pi> = Export (sync_untyped a) (encode x) \<Pi>"
+  "typed_export a x \<Pi> \<equiv> Export (sync_untyped a) (encode x) \<Pi>"
 
-definition
+abbreviation
   typed_import :: "'a sync_channel \<Rightarrow> ('a::embeddable \<Rightarrow> 'M program) \<Rightarrow> 'M program"
 where
-  [simp]: "typed_import a \<PP> = Import (sync_untyped a) (\<PP> \<circ> decode)"
+  "typed_import a \<PP> \<equiv> Import (sync_untyped a) (\<PP> \<circ> decode)"
 
 syntax
   "_typed_import" :: "'a sync_channel \<Rightarrow> pttrn \<Rightarrow> 'M program \<Rightarrow> 'M program"
