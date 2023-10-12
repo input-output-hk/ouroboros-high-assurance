@@ -14,10 +14,11 @@ begin
 hide_const (open) ZFC_in_HOL.set
 
 locale chain_sync =
-  fixes point :: "'i \<Rightarrow> 'q"
+  fixes point :: "'i::embeddable \<Rightarrow> 'q"
   fixes candidate_intersection_points :: "'i list \<Rightarrow> 'q list"
   fixes initial_client_chain :: "'i list"
   fixes initial_server_chain :: "'i list"
+  fixes server_chain_updates_channel :: "'i list sync_channel"
   assumes initial_client_chain_is_not_empty:
     "initial_client_chain \<noteq> []"
   assumes initial_server_chain_is_not_empty:
@@ -39,7 +40,8 @@ subsection \<open>State Machine\<close>
 datatype state =
   Idle |
   Intersect |
-  CanAwait
+  CanAwait |
+  MustReply
 
 datatype ('i, 'q) message =
   is_find_intersect: FindIntersect \<open>'q list\<close> |
@@ -53,7 +55,8 @@ datatype ('i, 'q) message =
 primrec agent_in_state' where
   "agent_in_state' Idle = Client" |
   "agent_in_state' Intersect = Server" |
-  "agent_in_state' CanAwait = Server"
+  "agent_in_state' CanAwait = Server" |
+  "agent_in_state' MustReply = Server"
 
 inductive can_finish_in_state' where
   "can_finish_in_state' Idle"
@@ -72,7 +75,11 @@ primrec next_state' where
   "next_state' CanAwait m = (partial_case m of
     RollForward _ \<Rightarrow> Idle |
     RollBackward _ \<Rightarrow> Idle |
-    AwaitReply \<Rightarrow> Idle \<comment> \<open>only for this initial implementation\<close>
+    AwaitReply \<Rightarrow> MustReply
+  )" |
+  "next_state' MustReply m = (partial_case m of
+    RollForward _ \<Rightarrow> Idle |
+    RollBackward _ \<Rightarrow> Idle
   )"
 
 definition state_machine where
@@ -112,9 +119,13 @@ corec client_program where
           client_program \<psi> \<kappa> (C @ [i]) \<phi> |
         Cont (RollBackward q) \<Rightarrow>
           client_program \<psi> \<kappa> (roll_back \<psi> C q) \<phi> |
-        Cont AwaitReply \<Rightarrow> \<comment> \<open>only for this initial implementation\<close>
-          \<up> Done;
-          \<bottom>
+        Cont AwaitReply \<Rightarrow>
+          \<down> M. (partial_case M of
+            Cont (RollForward i) \<Rightarrow>
+              client_program \<psi> \<kappa> (C @ [i]) \<phi> |
+            Cont (RollBackward q) \<Rightarrow>
+              client_program \<psi> \<kappa> (roll_back \<psi> C q) \<phi>
+          )
       )
   )"
 
@@ -124,8 +135,11 @@ definition index :: "('i \<Rightarrow> 'q) \<Rightarrow> 'q \<Rightarrow> 'i lis
 definition first_intersection_point :: "('i \<Rightarrow> 'q) \<Rightarrow> 'q list \<Rightarrow> 'i list \<rightharpoonup> 'q" where
   [simp]: "first_intersection_point \<psi> qs C  = find (\<lambda>q. q \<in> \<psi> ` set C) qs"
 
+definition last_intersection_point :: "('i \<Rightarrow> 'q) \<Rightarrow> 'i list \<Rightarrow> 'i list \<Rightarrow> 'q" where
+  [simp]: "last_intersection_point \<psi> C C' = (ARG_MAX (\<lambda>q. index \<psi> q C) q. q \<in> \<psi> ` (set C \<inter> set C'))"
+
 corec server_program where
-  "server_program \<psi> C k b =
+  "server_program \<psi> C k b a =
     \<down> M. (partial_case M of
       Done \<Rightarrow>
         \<bottom> |
@@ -133,21 +147,31 @@ corec server_program where
         (case first_intersection_point \<psi> qs C of
           None \<Rightarrow>
             \<up> Cont IntersectNotFound;
-            server_program \<psi> C k b |
+            server_program \<psi> C k b a |
           Some q \<Rightarrow>
             \<up> Cont (IntersectFound q);
-            server_program \<psi> C (index \<psi> q C) True
+            server_program \<psi> C (index \<psi> q C) True a
         ) |
       Cont RequestNext \<Rightarrow>
         if b then
           \<up> Cont (RollBackward (\<psi> (C ! k)));
-          server_program \<psi> C k False
+          server_program \<psi> C k False a
         else if Suc k < length C then
           \<up> Cont (RollForward (C ! Suc k));
-          server_program \<psi> C (Suc k) b
-        else \<comment> \<open>only for this initial implementation\<close>
+          server_program \<psi> C (Suc k) b a
+        else
           \<up> Cont AwaitReply;
-          server_program \<psi> C k b
+          a \<rightarrow> C'. (
+            \<comment> \<open>assumed that at least \<^term>\<open>C\<close>~and~\<^term>\<open>C'\<close> coincide in the genesis block\<close>
+            let q = last_intersection_point \<psi> C C' in
+            if q = \<psi> (last C) then
+              \<comment> \<open>assumed that \<^term>\<open>C'\<close> is longer than \<^term>\<open>C\<close>\<close>
+              \<up> Cont (RollForward (C' ! Suc k));
+              server_program \<psi> C' (Suc k) b a
+            else
+              \<up> Cont (RollBackward q);
+              server_program \<psi> C' (index \<psi> q C') b a
+          )
     )"
 
 context chain_sync
@@ -157,7 +181,7 @@ primrec program where
   "program Client =
     client_program point candidate_intersection_points initial_client_chain IntersectionFinding" |
   "program Server =
-    server_program point initial_server_chain 0 False"
+    server_program point initial_server_chain 0 False server_chain_updates_channel"
 
 end
 
@@ -176,7 +200,7 @@ proof
       )
   moreover
   have "
-    server_program point initial_server_chain read_pointer must_roll_back
+    server_program point initial_server_chain read_pointer must_roll_back server_chain_updates_channel
     \<Colon>\<^bsub>Server\<^esub>
     Cont possibilities"
     for read_pointer and must_roll_back
