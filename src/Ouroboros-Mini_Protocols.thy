@@ -399,7 +399,7 @@ text \<open>
 method state_machine_bisimulation uses program_expansion extra_splits = (
   subst (2) program_expansion,
   fastforce
-    simp add: protocol_state_machine.possibilities_def Let_def domIff
+    simp add: protocol_state_machine.possibilities_def domIff Let_def
     split: extra_splits
     intro: up_to_embedding_up_to_actual_embedding.intros
 )
