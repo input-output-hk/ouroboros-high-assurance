@@ -165,9 +165,9 @@ corec server_program where
               \<up> Cont (RollForward (C' ! Suc k));
               server_program \<psi> C' u (Suc k) b
             else
-              let q = \<psi> (last (longest_common_prefix C C')) in
-              \<up> Cont (RollBackward q);
-              server_program \<psi> C' u (index \<psi> q C') b
+              let C\<^sub>p = longest_common_prefix C C' in
+              \<up> Cont (RollBackward (\<psi> (last C\<^sub>p)));
+              server_program \<psi> C' u (length C\<^sub>p - 1) b
           )
     )"
 
