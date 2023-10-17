@@ -160,12 +160,12 @@ corec server_program where
           \<up> Cont AwaitReply;
           u \<rightarrow> C'. (
             \<comment> \<open>assumed that at least \<^term>\<open>C\<close>~and~\<^term>\<open>C'\<close> coincide in the genesis block\<close>
-            let q = \<psi> (last (longest_common_prefix C C')) in
-            if q = \<psi> (last C) then
+            if prefix C C' then
               \<comment> \<open>assumed that \<^term>\<open>C'\<close> is longer than \<^term>\<open>C\<close>\<close>
               \<up> Cont (RollForward (C' ! Suc k));
               server_program \<psi> C' u (Suc k) b
             else
+              let q = \<psi> (last (longest_common_prefix C C')) in
               \<up> Cont (RollBackward q);
               server_program \<psi> C' u (index \<psi> q C') b
           )
