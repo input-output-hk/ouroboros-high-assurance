@@ -18,7 +18,7 @@ locale chain_sync =
   fixes candidate_intersection_points :: "'i list \<Rightarrow> 'q list"
   fixes initial_client_chain :: "'i list"
   fixes initial_server_chain :: "'i list"
-  fixes server_chain_updates_channel :: "'i list sync_channel"
+  fixes server_chain_updates :: "'i list sync_channel"
   assumes initial_client_chain_is_not_empty:
     "initial_client_chain \<noteq> []"
   assumes initial_server_chain_is_not_empty:
@@ -181,7 +181,7 @@ primrec program where
   "program Client =
     client_program point candidate_intersection_points initial_client_chain IntersectionFinding" |
   "program Server =
-    server_program point initial_server_chain 0 False server_chain_updates_channel"
+    server_program point initial_server_chain 0 False server_chain_updates"
 
 end
 
@@ -200,7 +200,7 @@ proof
       )
   moreover
   have "
-    server_program point initial_server_chain read_pointer must_roll_back server_chain_updates_channel
+    server_program point initial_server_chain read_pointer must_roll_back server_chain_updates
     \<Colon>\<^bsub>Server\<^esub>
     Cont possibilities"
     for read_pointer and must_roll_back
