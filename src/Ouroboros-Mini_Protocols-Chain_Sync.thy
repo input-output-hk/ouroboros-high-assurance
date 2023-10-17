@@ -136,7 +136,7 @@ definition first_intersection_point :: "('i \<Rightarrow> 'q) \<Rightarrow> 'q l
   [simp]: "first_intersection_point \<psi> qs C  = find (\<lambda>q. q \<in> \<psi> ` set C) qs"
 
 corec server_program where
-  "server_program \<psi> C k b a =
+  "server_program \<psi> C u k b =
     \<down> M. (partial_case M of
       Done \<Rightarrow>
         \<bottom> |
@@ -144,30 +144,30 @@ corec server_program where
         (case first_intersection_point \<psi> qs C of
           None \<Rightarrow>
             \<up> Cont IntersectNotFound;
-            server_program \<psi> C k b a |
+            server_program \<psi> C u k b |
           Some q \<Rightarrow>
             \<up> Cont (IntersectFound q);
-            server_program \<psi> C (index \<psi> q C) True a
+            server_program \<psi> C u (index \<psi> q C) True
         ) |
       Cont RequestNext \<Rightarrow>
         if b then
           \<up> Cont (RollBackward (\<psi> (C ! k)));
-          server_program \<psi> C k False a
+          server_program \<psi> C u k False
         else if Suc k < length C then
           \<up> Cont (RollForward (C ! Suc k));
-          server_program \<psi> C (Suc k) b a
+          server_program \<psi> C u (Suc k) b
         else
           \<up> Cont AwaitReply;
-          a \<rightarrow> C'. (
+          u \<rightarrow> C'. (
             \<comment> \<open>assumed that at least \<^term>\<open>C\<close>~and~\<^term>\<open>C'\<close> coincide in the genesis block\<close>
             let q = \<psi> (last (longest_common_prefix C C')) in
             if q = \<psi> (last C) then
               \<comment> \<open>assumed that \<^term>\<open>C'\<close> is longer than \<^term>\<open>C\<close>\<close>
               \<up> Cont (RollForward (C' ! Suc k));
-              server_program \<psi> C' (Suc k) b a
+              server_program \<psi> C' u (Suc k) b
             else
               \<up> Cont (RollBackward q);
-              server_program \<psi> C' (index \<psi> q C') b a
+              server_program \<psi> C' u (index \<psi> q C') b
           )
     )"
 
