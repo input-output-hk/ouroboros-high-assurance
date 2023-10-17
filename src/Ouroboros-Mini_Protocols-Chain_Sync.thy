@@ -135,9 +135,6 @@ definition index :: "('i \<Rightarrow> 'q) \<Rightarrow> 'q \<Rightarrow> 'i lis
 definition first_intersection_point :: "('i \<Rightarrow> 'q) \<Rightarrow> 'q list \<Rightarrow> 'i list \<rightharpoonup> 'q" where
   [simp]: "first_intersection_point \<psi> qs C  = find (\<lambda>q. q \<in> \<psi> ` set C) qs"
 
-definition last_intersection_point :: "('i \<Rightarrow> 'q) \<Rightarrow> 'i list \<Rightarrow> 'i list \<Rightarrow> 'q" where
-  [simp]: "last_intersection_point \<psi> C C' = (ARG_MAX (\<lambda>q. index \<psi> q C) q. q \<in> \<psi> ` (set C \<inter> set C'))"
-
 corec server_program where
   "server_program \<psi> C k b a =
     \<down> M. (partial_case M of
@@ -163,7 +160,7 @@ corec server_program where
           \<up> Cont AwaitReply;
           a \<rightarrow> C'. (
             \<comment> \<open>assumed that at least \<^term>\<open>C\<close>~and~\<^term>\<open>C'\<close> coincide in the genesis block\<close>
-            let q = last_intersection_point \<psi> C C' in
+            let q = \<psi> (last (longest_common_prefix C C')) in
             if q = \<psi> (last C) then
               \<comment> \<open>assumed that \<^term>\<open>C'\<close> is longer than \<^term>\<open>C\<close>\<close>
               \<up> Cont (RollForward (C' ! Suc k));
