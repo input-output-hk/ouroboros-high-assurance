@@ -158,7 +158,8 @@ corec server_program where
           server_program \<psi> C u (Suc k) b
         else
           \<up> Cont AwaitReply;
-          u \<rightarrow> C'. (
+          u \<rightarrow> C'.
+          (
             \<comment> \<open>assumed that at least \<^term>\<open>C\<close>~and~\<^term>\<open>C'\<close> coincide in the genesis block\<close>
             if prefix C C' then
               \<comment> \<open>assumed that \<^term>\<open>C'\<close> is longer than \<^term>\<open>C\<close>\<close>
