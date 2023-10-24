@@ -150,6 +150,11 @@ primrec server_state_in_phase where
   "server_state_in_phase ClientLagging = Idle" |
   "server_state_in_phase ClientCatchUp = MustReply"
 
+text \<open>
+  We assume that the environment sends to \<^term>\<open>u\<close> only non-empty lists whose first elements are
+  equal to the first element of \<^term>\<open>C\<close>.
+\<close>
+
 corec server_program' where
   "server_program' \<psi> u k b C \<phi> = (case \<phi> of
     ClientCatchUp \<Rightarrow>
