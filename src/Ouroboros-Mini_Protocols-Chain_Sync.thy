@@ -17,6 +17,7 @@ locale chain_sync =
   fixes point :: "'i::embeddable \<Rightarrow> 'q"
   fixes candidate_intersection_points :: "'i list \<Rightarrow> 'q list"
   fixes initial_client_chain :: "'i list"
+  fixes client_chain_updates :: "'i list sync_channel"
   fixes server_chain_updates :: "'i list sync_channel"
   assumes initial_client_chain_is_not_empty:
     "initial_client_chain \<noteq> []"
@@ -99,7 +100,7 @@ datatype client_phase =
   is_chain_update: ChainUpdate
 
 corec client_program where
-  "client_program \<psi> \<kappa> C \<phi> = (case \<phi> of
+  "client_program \<psi> u \<kappa> C \<phi> = (case \<phi> of
     IntersectionFinding \<Rightarrow>
       \<up> Cont (FindIntersect (\<kappa> C));
       \<down> M. (partial_case M of
@@ -107,21 +108,22 @@ corec client_program where
           \<up> Done;
           \<bottom> |
         Cont (IntersectFound _) \<Rightarrow>
-          client_program \<psi> \<kappa> C ChainUpdate
+          client_program \<psi> u \<kappa> C ChainUpdate
       ) |
     ChainUpdate \<Rightarrow>
+      u \<leftarrow> C;
       \<up> Cont RequestNext;
       \<down> M. (partial_case M of
         Cont (RollForward i) \<Rightarrow>
-          client_program \<psi> \<kappa> (C @ [i]) \<phi> |
+          client_program \<psi> u \<kappa> (C @ [i]) \<phi> |
         Cont (RollBackward q) \<Rightarrow>
-          client_program \<psi> \<kappa> (roll_back \<psi> C q) \<phi> |
+          client_program \<psi> u \<kappa> (roll_back \<psi> C q) \<phi> |
         Cont AwaitReply \<Rightarrow>
           \<down> M. (partial_case M of
             Cont (RollForward i) \<Rightarrow>
-              client_program \<psi> \<kappa> (C @ [i]) \<phi> |
+              client_program \<psi> u \<kappa> (C @ [i]) \<phi> |
             Cont (RollBackward q) \<Rightarrow>
-              client_program \<psi> \<kappa> (roll_back \<psi> C q) \<phi>
+              client_program \<psi> u \<kappa> (roll_back \<psi> C q) \<phi>
           )
       )
   )"
@@ -209,16 +211,26 @@ begin
 
 primrec program where
   "program Client =
-    client_program point candidate_intersection_points initial_client_chain IntersectionFinding" |
+    client_program
+      point
+      client_chain_updates
+      candidate_intersection_points
+      initial_client_chain
+      IntersectionFinding" |
   "program Server =
-    server_program point server_chain_updates 0 False ClientLagging"
+    server_program
+      point
+      server_chain_updates
+      0
+      False
+      ClientLagging"
 
 end
 
 sublocale chain_sync \<subseteq> protocol_programs \<open>possibilities\<close> \<open>program\<close>
 proof
   have "
-    client_program point candidate_intersection_points initial_client_chain phase
+    client_program point client_chain_updates candidate_intersection_points initial_client_chain phase
     \<Colon>\<^bsub>Client\<^esub>
     Cont possibilities"
     for phase
