@@ -136,13 +136,13 @@ definition first_intersection_point :: "('i \<Rightarrow> 'q) \<Rightarrow> 'q l
 
 definition chain_switch :: "('i \<Rightarrow> 'q) \<Rightarrow> nat \<Rightarrow> 'i list \<Rightarrow> 'i list \<Rightarrow> ('i, 'q) message \<times> nat" where
   [simp]: "chain_switch \<psi> k C C' =
-  (
-    if prefix C C' then
-      (RollForward (C' ! Suc k), Suc k)
-    else
-      let C\<^sub>p = longest_common_prefix C C' in
-      (RollBackward (\<psi> (last C\<^sub>p)), length C\<^sub>p - 1)
-  )"
+    (
+      if prefix C C' then
+        (RollForward (C' ! Suc k), Suc k)
+      else
+        let C\<^sub>p = longest_common_prefix C C' in
+        (RollBackward (\<psi> (last C\<^sub>p)), length C\<^sub>p - 1)
+    )"
 
 datatype server_phase =
   is_client_lagging: ClientLagging |
