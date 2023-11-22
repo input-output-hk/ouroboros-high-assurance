@@ -217,7 +217,7 @@ primrec program where
       initial_client_chain
       IntersectionFinding" |
   "program Server =
-    server_chain_updates \<rightarrow> C. \<comment> \<open>\<^term>\<open>C \<noteq> []\<close> assumed\<close>
+    server_chain_updates \<rightarrow> C.
     server_program
       point
       server_chain_updates
