@@ -245,7 +245,7 @@ proof
   have "
     server_program point server_chain_updates read_pointer must_roll_back initial_server_chain phase
     \<Colon>\<^bsub>Server\<^esub>
-    Cont \<lbrakk>state_machine\<lparr>initial_state := state_in_server_phase phase\<rparr>\<rbrakk>"
+    Cont \<lbrakk>state_machine \<lparr>initial_state := state_in_server_phase phase\<rparr>\<rbrakk>"
     for read_pointer and must_roll_back and initial_server_chain and phase
     by
       (coinduction
