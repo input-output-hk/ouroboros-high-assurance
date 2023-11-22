@@ -134,8 +134,10 @@ definition index :: "('i \<Rightarrow> 'q) \<Rightarrow> 'q \<Rightarrow> 'i lis
 definition first_intersection_point :: "('i \<Rightarrow> 'q) \<Rightarrow> 'q list \<Rightarrow> 'i list \<rightharpoonup> 'q" where
   [simp]: "first_intersection_point \<psi> qs C  = find (\<lambda>q. q \<in> \<psi> ` set C) qs"
 
-definition chain_switch :: "('i \<Rightarrow> 'q) \<Rightarrow> nat \<Rightarrow> 'i list \<Rightarrow> 'i list \<Rightarrow> ('i, 'q) message \<times> nat" where
-  [simp]: "chain_switch \<psi> k C C' =
+definition
+  chain_update_reaction :: "('i \<Rightarrow> 'q) \<Rightarrow> nat \<Rightarrow> 'i list \<Rightarrow> 'i list \<Rightarrow> ('i, 'q) message \<times> nat"
+where
+  [simp]: "chain_update_reaction \<psi> k C C' =
     (
       if prefix C C' then
         (RollForward (C' ! Suc k), Suc k)
@@ -165,7 +167,7 @@ corec server_program where
         if C' = C then \<comment> \<open>keep waiting for updates\<close>
           server_program \<psi> u k b C \<phi>
         else \<comment> \<open>changes found, switch to C'\<close>
-          let (M', k') = chain_switch \<psi> k C C' in
+          let (M', k') = chain_update_reaction \<psi> k C C' in
           \<up> Cont M';
           server_program \<psi> u k' b C' ClientLagging
       ) |
@@ -196,7 +198,7 @@ corec server_program where
                 \<up> Cont AwaitReply;
                 server_program \<psi> u k b C ClientCatchUp
             else \<comment> \<open>changes found, switch to C'\<close>
-              let (M', k') = chain_switch \<psi> k C C' in
+              let (M', k') = chain_update_reaction \<psi> k C C' in
               \<up> Cont M';
               server_program \<psi> u k' b C' \<phi>
           )
