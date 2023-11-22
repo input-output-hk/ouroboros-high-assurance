@@ -177,17 +177,17 @@ corec server_program where
         Cont RequestNext \<Rightarrow>
           u \<rightarrow> C'.
           (
-            if C' = C then \<comment> \<open>no changes, continue with C\<close>
+            if C' = C then
               if b then
                 \<up> Cont (RollBackward (\<psi> (C ! k)));
                 server_program \<psi> u k False C \<phi>
               else if Suc k < length C then
                 \<up> Cont (RollForward (C ! Suc k));
                 server_program \<psi> u (Suc k) b C \<phi>
-              else \<comment> \<open>client caught up\<close>
+              else
                 \<up> Cont AwaitReply;
                 server_program \<psi> u k b C ClientCatchUp
-            else \<comment> \<open>changes found, switch to C'\<close>
+            else
               let (M', k') = chain_update_reaction \<psi> k C C' in
               \<up> Cont M';
               server_program \<psi> u k' b C' \<phi>
@@ -196,9 +196,9 @@ corec server_program where
     ClientCatchUp \<Rightarrow>
       u \<rightarrow> C'.
       (
-        if C' = C then \<comment> \<open>keep waiting for updates\<close>
+        if C' = C then
           server_program \<psi> u k b C \<phi>
-        else \<comment> \<open>changes found, switch to C'\<close>
+        else
           let (M', k') = chain_update_reaction \<psi> k C C' in
           \<up> Cont M';
           server_program \<psi> u k' b C' ClientLagging
