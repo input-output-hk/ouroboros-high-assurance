@@ -161,16 +161,6 @@ text \<open>
 
 corec server_program where
   "server_program \<psi> u k b C \<phi> = (case \<phi> of
-    ClientCatchUp \<Rightarrow>
-      u \<rightarrow> C'.
-      (
-        if C' = C then \<comment> \<open>keep waiting for updates\<close>
-          server_program \<psi> u k b C \<phi>
-        else \<comment> \<open>changes found, switch to C'\<close>
-          let (M', k') = chain_update_reaction \<psi> k C C' in
-          \<up> Cont M';
-          server_program \<psi> u k' b C' ClientLagging
-      ) |
     ClientLagging \<Rightarrow>
       \<down> M. (partial_case M of
         Done \<Rightarrow>
@@ -202,6 +192,16 @@ corec server_program where
               \<up> Cont M';
               server_program \<psi> u k' b C' \<phi>
           )
+      ) |
+    ClientCatchUp \<Rightarrow>
+      u \<rightarrow> C'.
+      (
+        if C' = C then \<comment> \<open>keep waiting for updates\<close>
+          server_program \<psi> u k b C \<phi>
+        else \<comment> \<open>changes found, switch to C'\<close>
+          let (M', k') = chain_update_reaction \<psi> k C C' in
+          \<up> Cont M';
+          server_program \<psi> u k' b C' ClientLagging
       )
   )"
 
