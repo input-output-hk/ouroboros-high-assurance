@@ -157,17 +157,17 @@ text \<open>
   equal to the first element of \<^term>\<open>C\<close>.
 \<close>
 
-corec server_program' where
-  "server_program' \<psi> u k b C \<phi> = (case \<phi> of
+corec server_program where
+  "server_program \<psi> u k b C \<phi> = (case \<phi> of
     ClientCatchUp \<Rightarrow>
       u \<rightarrow> C'.
       (
         if C' = C then \<comment> \<open>keep waiting for updates\<close>
-          server_program' \<psi> u k b C \<phi>
+          server_program \<psi> u k b C \<phi>
         else \<comment> \<open>changes found, switch to C'\<close>
           let (M', k') = chain_switch \<psi> k C C' in
           \<up> Cont M';
-          server_program' \<psi> u k' b C' ClientLagging
+          server_program \<psi> u k' b C' ClientLagging
       ) |
     ClientLagging \<Rightarrow>
       \<down> M. (partial_case M of
@@ -177,10 +177,10 @@ corec server_program' where
           (case first_intersection_point \<psi> qs C of
             None \<Rightarrow>
               \<up> Cont IntersectNotFound;
-              server_program' \<psi> u k b C \<phi> |
+              server_program \<psi> u k b C \<phi> |
             Some q \<Rightarrow>
               \<up> Cont (IntersectFound q);
-              server_program' \<psi> u (index \<psi> q C) True C \<phi>
+              server_program \<psi> u (index \<psi> q C) True C \<phi>
           ) |
         Cont RequestNext \<Rightarrow>
           u \<rightarrow> C'.
@@ -188,23 +188,20 @@ corec server_program' where
             if C' = C then \<comment> \<open>no changes, continue with C\<close>
               if b then
                 \<up> Cont (RollBackward (\<psi> (C ! k)));
-                server_program' \<psi> u k False C \<phi>
+                server_program \<psi> u k False C \<phi>
               else if Suc k < length C then
                 \<up> Cont (RollForward (C ! Suc k));
-                server_program' \<psi> u (Suc k) b C \<phi>
+                server_program \<psi> u (Suc k) b C \<phi>
               else \<comment> \<open>client caught up\<close>
                 \<up> Cont AwaitReply;
-                server_program' \<psi> u k b C ClientCatchUp
+                server_program \<psi> u k b C ClientCatchUp
             else \<comment> \<open>changes found, switch to C'\<close>
               let (M', k') = chain_switch \<psi> k C C' in
               \<up> Cont M';
-              server_program' \<psi> u k' b C' \<phi>
+              server_program \<psi> u k' b C' \<phi>
           )
       )
   )"
-
-definition server_program where
-  [simp]: "server_program \<psi> u k b \<phi> = u \<rightarrow> C. server_program' \<psi> u k b C \<phi>"\<comment> \<open>\<^term>\<open>C \<noteq> []\<close> assumed\<close>
 
 context chain_sync
 begin
@@ -218,11 +215,13 @@ primrec program where
       initial_client_chain
       IntersectionFinding" |
   "program Server =
+    server_chain_updates \<rightarrow> C. \<comment> \<open>\<^term>\<open>C \<noteq> []\<close> assumed\<close>
     server_program
       point
       server_chain_updates
       0
       False
+      C
       ClientLagging"
 
 end
@@ -242,7 +241,7 @@ proof
       )
   moreover
   have "
-    server_program' point server_chain_updates read_pointer must_roll_back initial_server_chain phase
+    server_program point server_chain_updates read_pointer must_roll_back initial_server_chain phase
     \<Colon>\<^bsub>Server\<^esub>
     Cont \<lbrakk>state_machine\<lparr>initial_state := server_state_in_phase phase\<rparr>\<rbrakk>"
     for read_pointer and must_roll_back and initial_server_chain and phase
@@ -252,7 +251,7 @@ proof
         rule: up_to_embedding_is_sound
       )
       (state_machine_bisimulation
-        program_expansion: server_program'.code
+        program_expansion: server_program.code
         extra_splits: server_phase.splits or_done.splits message.splits option.splits
       )
   then have "program Server \<Colon>\<^bsub>Server\<^esub> Cont possibilities"
