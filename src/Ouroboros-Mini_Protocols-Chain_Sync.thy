@@ -150,9 +150,9 @@ datatype server_phase =
   is_client_lagging: ClientLagging |
   is_client_catch_up: ClientCatchUp
 
-primrec server_state_in_phase where
-  "server_state_in_phase ClientLagging = Idle" |
-  "server_state_in_phase ClientCatchUp = MustReply"
+primrec state_in_server_phase where
+  "state_in_server_phase ClientLagging = Idle" |
+  "state_in_server_phase ClientCatchUp = MustReply"
 
 text \<open>
   We assume that the environment sends to \<^term>\<open>u\<close> only non-empty lists whose first elements are
@@ -245,7 +245,7 @@ proof
   have "
     server_program point server_chain_updates read_pointer must_roll_back initial_server_chain phase
     \<Colon>\<^bsub>Server\<^esub>
-    Cont \<lbrakk>state_machine\<lparr>initial_state := server_state_in_phase phase\<rparr>\<rbrakk>"
+    Cont \<lbrakk>state_machine\<lparr>initial_state := state_in_server_phase phase\<rparr>\<rbrakk>"
     for read_pointer and must_roll_back and initial_server_chain and phase
     by
       (coinduction
@@ -260,7 +260,7 @@ proof
     unfolding possibilities_def
     by
       (simp, intro import_conformance)
-      (metis comp_apply server_state_in_phase.simps(1))
+      (metis comp_apply state_in_server_phase.simps(1))
   ultimately show "program p \<Colon>\<^bsub>p\<^esub> Cont possibilities" for p
     by (cases p) simp_all
 qed
