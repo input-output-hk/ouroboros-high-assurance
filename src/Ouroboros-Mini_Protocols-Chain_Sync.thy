@@ -105,7 +105,7 @@ datatype client_phase =
   is_chain_update: ChainUpdate
 
 corec client_main_loop where
-  "client_main_loop \<psi> u \<kappa> C \<phi> = (case \<phi> of
+  "client_main_loop \<psi> \<kappa> C u \<phi> = (case \<phi> of
     IntersectionFinding \<Rightarrow>
       \<up> Cont (FindIntersect (\<kappa> C));
       \<down> M. (partial_case M of
@@ -113,22 +113,22 @@ corec client_main_loop where
           \<up> Done;
           \<bottom> |
         Cont (IntersectFound _) \<Rightarrow>
-          client_main_loop \<psi> u \<kappa> C ChainUpdate
+          client_main_loop \<psi> \<kappa> C u ChainUpdate
       ) |
     ChainUpdate \<Rightarrow>
       u \<leftarrow> C;
       \<up> Cont RequestNext;
       \<down> M. (partial_case M of
         Cont (RollForward i) \<Rightarrow>
-          client_main_loop \<psi> u \<kappa> (C @ [i]) \<phi> |
+          client_main_loop \<psi> \<kappa> (C @ [i]) u \<phi> |
         Cont (RollBackward q) \<Rightarrow>
-          client_main_loop \<psi> u \<kappa> (roll_back \<psi> C q) \<phi> |
+          client_main_loop \<psi> \<kappa> (roll_back \<psi> C q) u \<phi> |
         Cont AwaitReply \<Rightarrow>
           \<down> M. (partial_case M of
             Cont (RollForward i) \<Rightarrow>
-              client_main_loop \<psi> u \<kappa> (C @ [i]) \<phi> |
+              client_main_loop \<psi> \<kappa> (C @ [i]) u \<phi> |
             Cont (RollBackward q) \<Rightarrow>
-              client_main_loop \<psi> u \<kappa> (roll_back \<psi> C q) \<phi>
+              client_main_loop \<psi> \<kappa> (roll_back \<psi> C q) u \<phi>
           )
       )
   )"
@@ -215,9 +215,9 @@ primrec program where
   "program Client =
     client_main_loop
       point
-      client_chains
       candidate_intersection_points
       initial_client_chain
+      client_chains
       IntersectionFinding" |
   "program Server =
     server_chains \<rightarrow> C\<^sub>s.
@@ -233,7 +233,7 @@ end
 sublocale chain_sync \<subseteq> protocol_programs \<open>possibilities\<close> \<open>program\<close>
 proof
   have "
-    client_main_loop point client_chains candidate_intersection_points initial_client_chain \<phi>
+    client_main_loop point candidate_intersection_points initial_client_chain client_chains \<phi>
     \<Colon>\<^bsub>Client\<^esub>
     Cont \<lbrakk>state_machine\<rbrakk>"
     for \<phi>
