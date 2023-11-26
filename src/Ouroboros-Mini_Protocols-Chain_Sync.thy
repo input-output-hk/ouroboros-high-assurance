@@ -155,9 +155,9 @@ datatype server_phase =
   is_client_syncing: Client_Syncing |
   is_client_in_sync: Client_In_Sync
 
-primrec state_in_server_phase where
-  "state_in_server_phase Client_Syncing = Idle" |
-  "state_in_server_phase Client_In_Sync = MustReply"
+primrec base_state_in_server_phase where
+  "base_state_in_server_phase Client_Syncing = Idle" |
+  "base_state_in_server_phase Client_In_Sync = MustReply"
 
 text \<open>
   We assume that the environment sends to \<^term>\<open>u\<close> only non-empty lists whose first elements are
@@ -249,7 +249,7 @@ proof
   have "
     server_main_loop point server_chain_updates b C\<^sub>c \<phi>
     \<Colon>\<^bsub>Server\<^esub>
-    Cont \<lbrakk>state_machine \<lparr>initial_state := state_in_server_phase \<phi>\<rparr>\<rbrakk>"
+    Cont \<lbrakk>state_machine \<lparr>initial_state := base_state_in_server_phase \<phi>\<rparr>\<rbrakk>"
     for b and C\<^sub>c and \<phi>
     by
       (coinduction arbitrary: b C\<^sub>c \<phi> rule: up_to_embedding_is_sound)
@@ -265,7 +265,7 @@ proof
         possibilities_def
         state_machine_def
         state_machine.simps(6)
-        state_in_server_phase.simps(1)
+        base_state_in_server_phase.simps(1)
         comp_apply
       )
   ultimately show "program p \<Colon>\<^bsub>p\<^esub> Cont possibilities" for p
