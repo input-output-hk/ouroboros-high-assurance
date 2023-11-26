@@ -17,7 +17,7 @@ locale chain_sync =
   fixes point :: "'i::embeddable \<Rightarrow> 'q"
   fixes candidate_intersection_points :: "'i list \<Rightarrow> 'q list"
   fixes initial_client_chain :: "'i list"
-  fixes client_chain_updates :: "'i list sync_channel"
+  fixes client_chains :: "'i list sync_channel"
   fixes server_chains :: "'i list sync_channel"
   assumes initial_client_chain_is_not_empty:
     "initial_client_chain \<noteq> []"
@@ -215,7 +215,7 @@ primrec program where
   "program Client =
     client_main_loop
       point
-      client_chain_updates
+      client_chains
       candidate_intersection_points
       initial_client_chain
       IntersectionFinding" |
@@ -233,7 +233,7 @@ end
 sublocale chain_sync \<subseteq> protocol_programs \<open>possibilities\<close> \<open>program\<close>
 proof
   have "
-    client_main_loop point client_chain_updates candidate_intersection_points initial_client_chain \<phi>
+    client_main_loop point client_chains candidate_intersection_points initial_client_chain \<phi>
     \<Colon>\<^bsub>Client\<^esub>
     Cont \<lbrakk>state_machine\<rbrakk>"
     for \<phi>
