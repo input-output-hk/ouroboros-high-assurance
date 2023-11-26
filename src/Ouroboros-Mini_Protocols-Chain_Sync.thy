@@ -99,8 +99,8 @@ datatype client_phase =
   is_intersection_finding: IntersectionFinding |
   is_chain_update: ChainUpdate
 
-corec client_program where
-  "client_program \<psi> u \<kappa> C \<phi> = (case \<phi> of
+corec client_main_loop where
+  "client_main_loop \<psi> u \<kappa> C \<phi> = (case \<phi> of
     IntersectionFinding \<Rightarrow>
       \<up> Cont (FindIntersect (\<kappa> C));
       \<down> M. (partial_case M of
@@ -108,22 +108,22 @@ corec client_program where
           \<up> Done;
           \<bottom> |
         Cont (IntersectFound _) \<Rightarrow>
-          client_program \<psi> u \<kappa> C ChainUpdate
+          client_main_loop \<psi> u \<kappa> C ChainUpdate
       ) |
     ChainUpdate \<Rightarrow>
       u \<leftarrow> C;
       \<up> Cont RequestNext;
       \<down> M. (partial_case M of
         Cont (RollForward i) \<Rightarrow>
-          client_program \<psi> u \<kappa> (C @ [i]) \<phi> |
+          client_main_loop \<psi> u \<kappa> (C @ [i]) \<phi> |
         Cont (RollBackward q) \<Rightarrow>
-          client_program \<psi> u \<kappa> (roll_back \<psi> C q) \<phi> |
+          client_main_loop \<psi> u \<kappa> (roll_back \<psi> C q) \<phi> |
         Cont AwaitReply \<Rightarrow>
           \<down> M. (partial_case M of
             Cont (RollForward i) \<Rightarrow>
-              client_program \<psi> u \<kappa> (C @ [i]) \<phi> |
+              client_main_loop \<psi> u \<kappa> (C @ [i]) \<phi> |
             Cont (RollBackward q) \<Rightarrow>
-              client_program \<psi> u \<kappa> (roll_back \<psi> C q) \<phi>
+              client_main_loop \<psi> u \<kappa> (roll_back \<psi> C q) \<phi>
           )
       )
   )"
@@ -164,8 +164,8 @@ text \<open>
   equal to the first element of \<^term>\<open>C\<close>.
 \<close>
 
-corec server_program where
-  "server_program \<psi> u b C\<^sub>c \<phi> = (case \<phi> of
+corec server_main_loop where
+  "server_main_loop \<psi> u b C\<^sub>c \<phi> = (case \<phi> of
     ClientLagging \<Rightarrow>
       \<down> M. (partial_case M of
         Done \<Rightarrow>
@@ -175,25 +175,25 @@ corec server_program where
           (case first_intersection_point \<psi> qs C\<^sub>s of
             None \<Rightarrow>
               \<up> Cont IntersectNotFound;
-              server_program \<psi> u b C\<^sub>c \<phi> |
+              server_main_loop \<psi> u b C\<^sub>c \<phi> |
             Some q \<Rightarrow>
               \<up> Cont (IntersectFound q);
-              server_program \<psi> u True (take (Suc (index \<psi> q C\<^sub>s)) C\<^sub>s) \<phi>
+              server_main_loop \<psi> u True (take (Suc (index \<psi> q C\<^sub>s)) C\<^sub>s) \<phi>
           ) |
         Cont RequestNext \<Rightarrow>
           (
             if b then
               \<up> Cont (RollBackward (\<psi> (last C\<^sub>c)));
-              server_program \<psi> u False C\<^sub>c \<phi>
+              server_main_loop \<psi> u False C\<^sub>c \<phi>
             else
               u \<rightarrow> C\<^sub>s.
               (case server_step \<psi> C\<^sub>c C\<^sub>s of
                 Wait \<Rightarrow>
                   \<up> Cont AwaitReply;
-                  server_program \<psi> u b C\<^sub>c ClientCatchUp |
+                  server_main_loop \<psi> u b C\<^sub>c ClientCatchUp |
                 Progress m C\<^sub>c' \<Rightarrow>
                   \<up> Cont m;
-                  server_program \<psi> u b C\<^sub>c' \<phi>
+                  server_main_loop \<psi> u b C\<^sub>c' \<phi>
               )
           )
       ) |
@@ -201,10 +201,10 @@ corec server_program where
       u \<rightarrow> C\<^sub>s.
       (case server_step \<psi> C\<^sub>c C\<^sub>s of
         Wait \<Rightarrow>
-          server_program \<psi> u b C\<^sub>c \<phi> |
+          server_main_loop \<psi> u b C\<^sub>c \<phi> |
         Progress m C\<^sub>c' \<Rightarrow>
           \<up> Cont m;
-          server_program \<psi> u b C\<^sub>c' ClientLagging
+          server_main_loop \<psi> u b C\<^sub>c' ClientLagging
       )
   )"
 
@@ -213,7 +213,7 @@ begin
 
 primrec program where
   "program Client =
-    client_program
+    client_main_loop
       point
       client_chain_updates
       candidate_intersection_points
@@ -221,7 +221,7 @@ primrec program where
       IntersectionFinding" |
   "program Server =
     server_chain_updates \<rightarrow> C\<^sub>s.
-    server_program
+    server_main_loop
       point
       server_chain_updates
       False
@@ -233,28 +233,28 @@ end
 sublocale chain_sync \<subseteq> protocol_programs \<open>possibilities\<close> \<open>program\<close>
 proof
   have "
-    client_program point client_chain_updates candidate_intersection_points initial_client_chain \<phi>
+    client_main_loop point client_chain_updates candidate_intersection_points initial_client_chain \<phi>
     \<Colon>\<^bsub>Client\<^esub>
     Cont \<lbrakk>state_machine\<rbrakk>"
     for \<phi>
     by
       (coinduction arbitrary: initial_client_chain \<phi> rule: up_to_embedding_is_sound)
       (state_machine_bisimulation
-        program_expansion: client_program.code
+        program_expansion: client_main_loop.code
         extra_splits: client_phase.splits or_done.splits message.splits
       )
   then have "program Client \<Colon>\<^bsub>Client\<^esub> Cont possibilities"
     by (simp add: protocol_state_machine.possibilities_def)
   moreover
   have "
-    server_program point server_chain_updates b C\<^sub>c \<phi>
+    server_main_loop point server_chain_updates b C\<^sub>c \<phi>
     \<Colon>\<^bsub>Server\<^esub>
     Cont \<lbrakk>state_machine \<lparr>initial_state := state_in_server_phase \<phi>\<rparr>\<rbrakk>"
     for b and C\<^sub>c and \<phi>
     by
       (coinduction arbitrary: b C\<^sub>c \<phi> rule: up_to_embedding_is_sound)
       (state_machine_bisimulation
-        program_expansion: server_program.code
+        program_expansion: server_main_loop.code
         extra_splits: server_phase.splits or_done.splits message.splits option.splits server_step.splits
       )
   then have "program Server \<Colon>\<^bsub>Server\<^esub> Cont possibilities"
