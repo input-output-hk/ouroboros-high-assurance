@@ -258,10 +258,10 @@ proof
         extra_splits: server_phase.splits or_done.splits message.splits option.splits server_step.splits
       )
   then have "program Server \<Colon>\<^bsub>Server\<^esub> Cont possibilities"
-    using import_conformance
+    unfolding program.simps(2)
     by
-      (smt
-        program.simps(2)
+      (intro import_conformance)
+      (metis
         possibilities_def
         state_machine_def
         state_machine.simps(6)
