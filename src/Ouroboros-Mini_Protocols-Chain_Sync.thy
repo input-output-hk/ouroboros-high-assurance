@@ -18,7 +18,7 @@ locale chain_sync =
   fixes candidate_intersection_points :: "'i list \<Rightarrow> 'q list"
   fixes initial_client_chain :: "'i list"
   fixes client_chain_updates :: "'i list sync_channel"
-  fixes server_chain_updates :: "'i list sync_channel"
+  fixes server_chains :: "'i list sync_channel"
   assumes initial_client_chain_is_not_empty:
     "initial_client_chain \<noteq> []"
 
@@ -220,10 +220,10 @@ primrec program where
       initial_client_chain
       IntersectionFinding" |
   "program Server =
-    server_chain_updates \<rightarrow> C\<^sub>s.
+    server_chains \<rightarrow> C\<^sub>s.
     server_main_loop
       point
-      server_chain_updates
+      server_chains
       False
       [hd C\<^sub>s]
       Client_Syncing"
@@ -247,7 +247,7 @@ proof
     by (simp add: protocol_state_machine.possibilities_def)
   moreover
   have "
-    server_main_loop point server_chain_updates b C\<^sub>c \<phi>
+    server_main_loop point server_chains b C\<^sub>c \<phi>
     \<Colon>\<^bsub>Server\<^esub>
     Cont \<lbrakk>state_machine \<lparr>initial_state := base_state_in_server_phase \<phi>\<rparr>\<rbrakk>"
     for b and C\<^sub>c and \<phi>
