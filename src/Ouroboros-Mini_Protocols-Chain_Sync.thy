@@ -27,6 +27,11 @@ text \<open>
   blocks, and~\<^typ>\<open>'q\<close> to refer to points.
 \<close>
 
+text \<open>
+  We assume that the environment only sends to \<^term>\<open>server_chains\<close> and only sends to it
+  non-empty lists whose first elements are the same.
+\<close>
+
 subsection \<open>Parties\<close>
 
 datatype party =
@@ -158,11 +163,6 @@ datatype server_phase =
 primrec base_state_in_server_phase where
   "base_state_in_server_phase Client_Syncing = Idle" |
   "base_state_in_server_phase Client_In_Sync = MustReply"
-
-text \<open>
-  We assume that the environment sends to \<^term>\<open>u\<close> only non-empty lists whose first elements are
-  equal to the first element of \<^term>\<open>C\<close>.
-\<close>
 
 corec server_main_loop where
   "server_main_loop \<psi> u b C\<^sub>c \<phi> = (case \<phi> of
