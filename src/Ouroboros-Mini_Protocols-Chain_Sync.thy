@@ -116,19 +116,19 @@ corec client_main_loop where
           client_main_loop \<psi> \<kappa> C u ChainUpdate
       ) |
     ChainUpdate \<Rightarrow>
-      u \<leftarrow> C;
+      let continue_with_new_chain = \<lambda>C'. u \<leftarrow> C'; client_main_loop \<psi> \<kappa> C' u \<phi> in
       \<up> Cont RequestNext;
       \<down> M. (partial_case M of
         Cont (RollForward i) \<Rightarrow>
-          client_main_loop \<psi> \<kappa> (C @ [i]) u \<phi> |
+          continue_with_new_chain (C @ [i]) |
         Cont (RollBackward q) \<Rightarrow>
-          client_main_loop \<psi> \<kappa> (roll_back \<psi> C q) u \<phi> |
+          continue_with_new_chain (roll_back \<psi> C q) |
         Cont AwaitReply \<Rightarrow>
           \<down> M. (partial_case M of
             Cont (RollForward i) \<Rightarrow>
-              client_main_loop \<psi> \<kappa> (C @ [i]) u \<phi> |
+              continue_with_new_chain (C @ [i]) |
             Cont (RollBackward q) \<Rightarrow>
-              client_main_loop \<psi> \<kappa> (roll_back \<psi> C q) u \<phi>
+              continue_with_new_chain (roll_back \<psi> C q)
           )
       )
   )"
