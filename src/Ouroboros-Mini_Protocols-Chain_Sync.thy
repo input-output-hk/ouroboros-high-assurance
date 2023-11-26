@@ -152,12 +152,12 @@ definition server_step :: "('i \<Rightarrow> 'q) \<Rightarrow> 'i list \<Rightar
     )"
 
 datatype server_phase =
-  is_client_lagging: ClientLagging |
-  is_client_catch_up: ClientCatchUp
+  is_client_syncing: Client_Syncing |
+  is_client_in_sync: Client_In_Sync
 
 primrec state_in_server_phase where
-  "state_in_server_phase ClientLagging = Idle" |
-  "state_in_server_phase ClientCatchUp = MustReply"
+  "state_in_server_phase Client_Syncing = Idle" |
+  "state_in_server_phase Client_In_Sync = MustReply"
 
 text \<open>
   We assume that the environment sends to \<^term>\<open>u\<close> only non-empty lists whose first elements are
@@ -166,7 +166,7 @@ text \<open>
 
 corec server_main_loop where
   "server_main_loop \<psi> u b C\<^sub>c \<phi> = (case \<phi> of
-    ClientLagging \<Rightarrow>
+    Client_Syncing \<Rightarrow>
       \<down> M. (partial_case M of
         Done \<Rightarrow>
           \<bottom> |
@@ -190,21 +190,21 @@ corec server_main_loop where
               (case server_step \<psi> C\<^sub>c C\<^sub>s of
                 Wait \<Rightarrow>
                   \<up> Cont AwaitReply;
-                  server_main_loop \<psi> u b C\<^sub>c ClientCatchUp |
+                  server_main_loop \<psi> u b C\<^sub>c Client_In_Sync |
                 Progress m C\<^sub>c' \<Rightarrow>
                   \<up> Cont m;
                   server_main_loop \<psi> u b C\<^sub>c' \<phi>
               )
           )
       ) |
-    ClientCatchUp \<Rightarrow>
+    Client_In_Sync \<Rightarrow>
       u \<rightarrow> C\<^sub>s.
       (case server_step \<psi> C\<^sub>c C\<^sub>s of
         Wait \<Rightarrow>
           server_main_loop \<psi> u b C\<^sub>c \<phi> |
         Progress m C\<^sub>c' \<Rightarrow>
           \<up> Cont m;
-          server_main_loop \<psi> u b C\<^sub>c' ClientLagging
+          server_main_loop \<psi> u b C\<^sub>c' Client_Syncing
       )
   )"
 
@@ -226,7 +226,7 @@ primrec program where
       server_chain_updates
       False
       [hd C\<^sub>s]
-      ClientLagging"
+      Client_Syncing"
 
 end
 
