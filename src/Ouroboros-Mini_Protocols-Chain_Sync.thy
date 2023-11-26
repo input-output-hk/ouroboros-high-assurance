@@ -134,16 +134,21 @@ definition index :: "('i \<Rightarrow> 'q) \<Rightarrow> 'q \<Rightarrow> 'i lis
 definition first_intersection_point :: "('i \<Rightarrow> 'q) \<Rightarrow> 'q list \<Rightarrow> 'i list \<rightharpoonup> 'q" where
   [simp]: "first_intersection_point \<psi> qs C  = find (\<lambda>q. q \<in> \<psi> ` set C) qs"
 
-definition
-  chain_update_reaction :: "('i \<Rightarrow> 'q) \<Rightarrow> nat \<Rightarrow> 'i list \<Rightarrow> 'i list \<Rightarrow> ('i, 'q) message \<times> nat"
-where
-  [simp]: "chain_update_reaction \<psi> k C C' =
+datatype ('i, 'p) server_step =
+  is_wait: Wait |
+  is_progress: Progress \<open>('i, 'p) message\<close> \<open>'i list\<close>
+
+definition server_step :: "('i \<Rightarrow> 'q) \<Rightarrow> 'i list \<Rightarrow> 'i list \<Rightarrow> ('i, 'q) server_step" where
+  [simp]: "server_step \<psi> C\<^sub>c C\<^sub>s =
     (
-      if prefix C C' then
-        (RollForward (C' ! Suc k), Suc k)
+      if C\<^sub>c = C\<^sub>s then
+        Wait
+      else if prefix C\<^sub>c C\<^sub>s then
+        let C\<^sub>c' = C\<^sub>c @ [C\<^sub>s ! length C\<^sub>c] in
+        Progress (RollForward (last C\<^sub>c')) C\<^sub>c'
       else
-        let C\<^sub>p = longest_common_prefix C C' in
-        (RollBackward (\<psi> (last C\<^sub>p)), length C\<^sub>p - 1)
+        let C\<^sub>c' = longest_common_prefix C\<^sub>c C\<^sub>s in
+        Progress (RollBackward (\<psi> (last C\<^sub>c'))) C\<^sub>c'
     )"
 
 datatype server_phase =
@@ -160,48 +165,46 @@ text \<open>
 \<close>
 
 corec server_program where
-  "server_program \<psi> u k b C \<phi> = (case \<phi> of
+  "server_program \<psi> u b C\<^sub>c \<phi> = (case \<phi> of
     ClientLagging \<Rightarrow>
       \<down> M. (partial_case M of
         Done \<Rightarrow>
           \<bottom> |
         Cont (FindIntersect qs) \<Rightarrow>
-          (case first_intersection_point \<psi> qs C of
+          u \<rightarrow> C\<^sub>s.
+          (case first_intersection_point \<psi> qs C\<^sub>s of
             None \<Rightarrow>
               \<up> Cont IntersectNotFound;
-              server_program \<psi> u k b C \<phi> |
+              server_program \<psi> u b C\<^sub>c \<phi> |
             Some q \<Rightarrow>
               \<up> Cont (IntersectFound q);
-              server_program \<psi> u (index \<psi> q C) True C \<phi>
+              server_program \<psi> u True (take (Suc (index \<psi> q C\<^sub>s)) C\<^sub>s) \<phi>
           ) |
         Cont RequestNext \<Rightarrow>
-          u \<rightarrow> C'.
           (
-            if C' = C then
-              if b then
-                \<up> Cont (RollBackward (\<psi> (C ! k)));
-                server_program \<psi> u k False C \<phi>
-              else if Suc k < length C then
-                \<up> Cont (RollForward (C ! Suc k));
-                server_program \<psi> u (Suc k) b C \<phi>
-              else
-                \<up> Cont AwaitReply;
-                server_program \<psi> u k b C ClientCatchUp
+            if b then
+              \<up> Cont (RollBackward (\<psi> (last C\<^sub>c)));
+              server_program \<psi> u False C\<^sub>c \<phi>
             else
-              let (M', k') = chain_update_reaction \<psi> k C C' in
-              \<up> Cont M';
-              server_program \<psi> u k' b C' \<phi>
+              u \<rightarrow> C\<^sub>s.
+              (case server_step \<psi> C\<^sub>c C\<^sub>s of
+                Wait \<Rightarrow>
+                  \<up> Cont AwaitReply;
+                  server_program \<psi> u b C\<^sub>c ClientCatchUp |
+                Progress m C\<^sub>c' \<Rightarrow>
+                  \<up> Cont m;
+                  server_program \<psi> u b C\<^sub>c' \<phi>
+              )
           )
       ) |
     ClientCatchUp \<Rightarrow>
-      u \<rightarrow> C'.
-      (
-        if C' = C then
-          server_program \<psi> u k b C \<phi>
-        else
-          let (M', k') = chain_update_reaction \<psi> k C C' in
-          \<up> Cont M';
-          server_program \<psi> u k' b C' ClientLagging
+      u \<rightarrow> C\<^sub>s.
+      (case server_step \<psi> C\<^sub>c C\<^sub>s of
+        Wait \<Rightarrow>
+          server_program \<psi> u b C\<^sub>c \<phi> |
+        Progress m C\<^sub>c' \<Rightarrow>
+          \<up> Cont m;
+          server_program \<psi> u b C\<^sub>c' ClientLagging
       )
   )"
 
@@ -217,13 +220,12 @@ primrec program where
       initial_client_chain
       IntersectionFinding" |
   "program Server =
-    server_chain_updates \<rightarrow> C.
+    server_chain_updates \<rightarrow> C\<^sub>s.
     server_program
       point
       server_chain_updates
-      0
       False
-      C
+      [hd C\<^sub>s]
       ClientLagging"
 
 end
@@ -231,38 +233,44 @@ end
 sublocale chain_sync \<subseteq> protocol_programs \<open>possibilities\<close> \<open>program\<close>
 proof
   have "
-    client_program point client_chain_updates candidate_intersection_points initial_client_chain phase
+    client_program point client_chain_updates candidate_intersection_points initial_client_chain \<phi>
     \<Colon>\<^bsub>Client\<^esub>
-    Cont possibilities"
-    for phase
+    Cont \<lbrakk>state_machine\<rbrakk>"
+    for \<phi>
     by
-      (coinduction arbitrary: initial_client_chain phase rule: up_to_embedding_is_sound)
+      (coinduction arbitrary: initial_client_chain \<phi> rule: up_to_embedding_is_sound)
       (state_machine_bisimulation
         program_expansion: client_program.code
         extra_splits: client_phase.splits or_done.splits message.splits
       )
+  then have "program Client \<Colon>\<^bsub>Client\<^esub> Cont possibilities"
+    by (simp add: protocol_state_machine.possibilities_def)
   moreover
   have "
-    server_program point server_chain_updates read_pointer must_roll_back initial_server_chain phase
+    server_program point server_chain_updates b C\<^sub>c \<phi>
     \<Colon>\<^bsub>Server\<^esub>
-    Cont \<lbrakk>state_machine \<lparr>initial_state := state_in_server_phase phase\<rparr>\<rbrakk>"
-    for read_pointer and must_roll_back and initial_server_chain and phase
+    Cont \<lbrakk>state_machine \<lparr>initial_state := state_in_server_phase \<phi>\<rparr>\<rbrakk>"
+    for b and C\<^sub>c and \<phi>
     by
-      (coinduction
-        arbitrary: read_pointer must_roll_back initial_server_chain phase
-        rule: up_to_embedding_is_sound
-      )
+      (coinduction arbitrary: b C\<^sub>c \<phi> rule: up_to_embedding_is_sound)
       (state_machine_bisimulation
         program_expansion: server_program.code
-        extra_splits: server_phase.splits or_done.splits message.splits option.splits
+        extra_splits: server_phase.splits or_done.splits message.splits option.splits server_step.splits
       )
   then have "program Server \<Colon>\<^bsub>Server\<^esub> Cont possibilities"
-    unfolding possibilities_def
+    using import_conformance
     by
-      (simp, intro import_conformance)
-      (metis comp_apply state_in_server_phase.simps(1))
+      (smt
+        program.simps(2)
+        possibilities_def
+        state_machine_def
+        state_machine.simps(6)
+        state_in_server_phase.simps(1)
+        comp_apply
+      )
   ultimately show "program p \<Colon>\<^bsub>p\<^esub> Cont possibilities" for p
     by (cases p) simp_all
+
 qed
 
 subsection \<open>The End\<close>
