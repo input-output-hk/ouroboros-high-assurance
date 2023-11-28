@@ -139,9 +139,9 @@ definition index :: "('i \<Rightarrow> 'q) \<Rightarrow> 'q \<Rightarrow> 'i lis
 definition first_intersection_point :: "('i \<Rightarrow> 'q) \<Rightarrow> 'q list \<Rightarrow> 'i list \<rightharpoonup> 'q" where
   [simp]: "first_intersection_point \<psi> qs C  = find (\<lambda>q. q \<in> \<psi> ` set C) qs"
 
-datatype ('i, 'p) server_step =
+datatype ('i, 'q) server_step =
   is_wait: Wait |
-  is_progress: Progress \<open>('i, 'p) message\<close> \<open>'i list\<close>
+  is_progress: Progress \<open>('i, 'q) message\<close> \<open>'i list\<close>
 
 definition server_step :: "('i \<Rightarrow> 'q) \<Rightarrow> 'i list \<Rightarrow> 'i list \<Rightarrow> ('i, 'q) server_step" where
   [simp]: "server_step \<psi> C\<^sub>c C\<^sub>s =
