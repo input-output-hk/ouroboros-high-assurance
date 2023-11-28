@@ -28,8 +28,8 @@ text \<open>
 \<close>
 
 text \<open>
-  We assume that the environment only sends to \<^term>\<open>server_chains\<close> and only sends to it
-  non-empty lists whose first elements are the same.
+  We assume that the environment only \<^emph>\<open>sends\<close> to \<^term>\<open>server_chains\<close> and only sends to it
+  non-empty lists whose first elements are all the same.
 \<close>
 
 subsection \<open>Parties\<close>
