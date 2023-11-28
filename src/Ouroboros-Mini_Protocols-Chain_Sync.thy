@@ -105,7 +105,7 @@ datatype client_phase =
   is_chain_update: ChainUpdate
 
 corec client_main_loop where
-  "client_main_loop \<psi> \<kappa> C u \<phi> = (case \<phi> of
+  "client_main_loop \<psi> \<kappa> C \<C> \<phi> = (case \<phi> of
     IntersectionFinding \<Rightarrow>
       \<up> Cont (FindIntersect (\<kappa> C));
       \<down> M. (partial_case M of
@@ -113,10 +113,10 @@ corec client_main_loop where
           \<up> Done;
           \<bottom> |
         Cont (IntersectFound _) \<Rightarrow>
-          client_main_loop \<psi> \<kappa> C u ChainUpdate
+          client_main_loop \<psi> \<kappa> C \<C> ChainUpdate
       ) |
     ChainUpdate \<Rightarrow>
-      let continue_with_new_chain = \<lambda>C'. u \<leftarrow> C'; client_main_loop \<psi> \<kappa> C' u \<phi> in
+      let continue_with_new_chain = \<lambda>C'. \<C> \<leftarrow> C'; client_main_loop \<psi> \<kappa> C' \<C> \<phi> in
       \<up> Cont RequestNext;
       \<down> M. (partial_case M of
         Cont (RollForward i) \<Rightarrow>
@@ -165,46 +165,46 @@ primrec base_state_in_server_phase where
   "base_state_in_server_phase ClientInSync = MustReply"
 
 corec server_main_loop where
-  "server_main_loop \<psi> u b C\<^sub>c \<phi> = (case \<phi> of
+  "server_main_loop \<psi> \<C> b C\<^sub>c \<phi> = (case \<phi> of
     ClientSyncing \<Rightarrow>
       \<down> M. (partial_case M of
         Done \<Rightarrow>
           \<bottom> |
         Cont (FindIntersect qs) \<Rightarrow>
-          u \<rightarrow> C\<^sub>s.
+          \<C> \<rightarrow> C\<^sub>s.
           (case first_intersection_point \<psi> qs C\<^sub>s of
             None \<Rightarrow>
               \<up> Cont IntersectNotFound;
-              server_main_loop \<psi> u b C\<^sub>c \<phi> |
+              server_main_loop \<psi> \<C> b C\<^sub>c \<phi> |
             Some q \<Rightarrow>
               \<up> Cont (IntersectFound q);
-              server_main_loop \<psi> u True (take (Suc (index \<psi> q C\<^sub>s)) C\<^sub>s) \<phi>
+              server_main_loop \<psi> \<C> True (take (Suc (index \<psi> q C\<^sub>s)) C\<^sub>s) \<phi>
           ) |
         Cont RequestNext \<Rightarrow>
           (
             if b then
               \<up> Cont (RollBackward (\<psi> (last C\<^sub>c)));
-              server_main_loop \<psi> u False C\<^sub>c \<phi>
+              server_main_loop \<psi> \<C> False C\<^sub>c \<phi>
             else
-              u \<rightarrow> C\<^sub>s.
+              \<C> \<rightarrow> C\<^sub>s.
               (case server_step \<psi> C\<^sub>c C\<^sub>s of
                 Wait \<Rightarrow>
                   \<up> Cont AwaitReply;
-                  server_main_loop \<psi> u b C\<^sub>c ClientInSync |
+                  server_main_loop \<psi> \<C> b C\<^sub>c ClientInSync |
                 Progress m C\<^sub>c' \<Rightarrow>
                   \<up> Cont m;
-                  server_main_loop \<psi> u b C\<^sub>c' \<phi>
+                  server_main_loop \<psi> \<C> b C\<^sub>c' \<phi>
               )
           )
       ) |
     ClientInSync \<Rightarrow>
-      u \<rightarrow> C\<^sub>s.
+      \<C> \<rightarrow> C\<^sub>s.
       (case server_step \<psi> C\<^sub>c C\<^sub>s of
         Wait \<Rightarrow>
-          server_main_loop \<psi> u b C\<^sub>c \<phi> |
+          server_main_loop \<psi> \<C> b C\<^sub>c \<phi> |
         Progress m C\<^sub>c' \<Rightarrow>
           \<up> Cont m;
-          server_main_loop \<psi> u b C\<^sub>c' ClientSyncing
+          server_main_loop \<psi> \<C> b C\<^sub>c' ClientSyncing
       )
   )"
 
