@@ -270,7 +270,6 @@ proof
       )
   ultimately show "program p \<Colon>\<^bsub>p\<^esub> Cont possibilities" for p
     by (cases p) simp_all
-
 qed
 
 subsection \<open>The End\<close>
