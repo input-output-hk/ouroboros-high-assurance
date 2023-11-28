@@ -157,16 +157,16 @@ definition server_step :: "('i \<Rightarrow> 'q) \<Rightarrow> 'i list \<Rightar
     )"
 
 datatype server_phase =
-  is_client_syncing: Client_Syncing |
-  is_client_in_sync: Client_In_Sync
+  is_client_syncing: ClientSyncing |
+  is_client_in_sync: ClientInSync
 
 primrec base_state_in_server_phase where
-  "base_state_in_server_phase Client_Syncing = Idle" |
-  "base_state_in_server_phase Client_In_Sync = MustReply"
+  "base_state_in_server_phase ClientSyncing = Idle" |
+  "base_state_in_server_phase ClientInSync = MustReply"
 
 corec server_main_loop where
   "server_main_loop \<psi> u b C\<^sub>c \<phi> = (case \<phi> of
-    Client_Syncing \<Rightarrow>
+    ClientSyncing \<Rightarrow>
       \<down> M. (partial_case M of
         Done \<Rightarrow>
           \<bottom> |
@@ -190,21 +190,21 @@ corec server_main_loop where
               (case server_step \<psi> C\<^sub>c C\<^sub>s of
                 Wait \<Rightarrow>
                   \<up> Cont AwaitReply;
-                  server_main_loop \<psi> u b C\<^sub>c Client_In_Sync |
+                  server_main_loop \<psi> u b C\<^sub>c ClientInSync |
                 Progress m C\<^sub>c' \<Rightarrow>
                   \<up> Cont m;
                   server_main_loop \<psi> u b C\<^sub>c' \<phi>
               )
           )
       ) |
-    Client_In_Sync \<Rightarrow>
+    ClientInSync \<Rightarrow>
       u \<rightarrow> C\<^sub>s.
       (case server_step \<psi> C\<^sub>c C\<^sub>s of
         Wait \<Rightarrow>
           server_main_loop \<psi> u b C\<^sub>c \<phi> |
         Progress m C\<^sub>c' \<Rightarrow>
           \<up> Cont m;
-          server_main_loop \<psi> u b C\<^sub>c' Client_Syncing
+          server_main_loop \<psi> u b C\<^sub>c' ClientSyncing
       )
   )"
 
@@ -226,7 +226,7 @@ primrec program where
       server_chains
       False
       [hd C\<^sub>s]
-      Client_Syncing"
+      ClientSyncing"
 
 end
 
