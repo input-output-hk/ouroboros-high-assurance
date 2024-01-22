@@ -26,7 +26,7 @@ it comprises the following:
     https://iohk.io/en/research/library/papers/ouroboros-bft-a-simple-byzantine-fault-tolerant-consensus-protocol/
     "Ouroboros-BFT: A Simple Byzantine Fault Tolerant Consensus Protocol"
 [ouroboros-praos]:
-    […]
+    https://iohk.io/en/research/library/papers/ouroboros-praos-an-adaptively-secure-semi-synchronous-proof-of-stake-protocol/
     "Ouroboros Praos: An Adaptively-Secure, Semi-Synchronous Proof-of-Stake Protocol"
 [networking-protocol]:
     https://ouroboros-network.cardano.intersectmbo.org/pdfs/network-spec
