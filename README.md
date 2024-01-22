@@ -1,7 +1,36 @@
 Overview
 ========
 
-[…]
+The `ouroboros-high-assurance` library contains formalizations related
+to the Ouroboros family of blockchain consensus protocols. Concretely,
+it comprises the following:
+
+  * A proof of the chain selection property
+  * Draft specifications of the following consensus protocols, using the
+    [Þ-calculus][thorn-calculus]:
+      - [Ouroboros BFT][ouroboros-bft]
+      - [Ouroboros Praos][ouroboros-praos]
+  * A specification of the Chain-Sync mini-protocol, using the
+    Þ-calculus
+  * A framework for specifying [mini-protocols][networking-protocol]
+  * Specifications of the following mini-protocols, using the
+    above-mentioned framework:
+      - Chain-Sync
+      - Ping-Pong
+      - Request-Response
+
+[thorn-calculus]:
+    https://github.com/input-output-hk/thorn-calculus
+    "A general-purpose process calculus with support for arbitrary data"
+[ouroboros-bft]:
+    https://iohk.io/en/research/library/papers/ouroboros-bft-a-simple-byzantine-fault-tolerant-consensus-protocol/
+    "Ouroboros-BFT: A Simple Byzantine Fault Tolerant Consensus Protocol"
+[ouroboros-praos]:
+    […]
+    "Ouroboros Praos: An Adaptively-Secure, Semi-Synchronous Proof-of-Stake Protocol"
+[networking-protocol]:
+    https://ouroboros-network.cardano.intersectmbo.org/pdfs/network-spec
+    "The Shelley Networking Protocol"
 
 
 Requirements
