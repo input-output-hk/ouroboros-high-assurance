@@ -21,6 +21,7 @@ text \<open>
 theory "Ouroboros-Mini_Protocols-Chain_Sync"
   imports
     "Ouroboros-Mini_Protocols"
+    "Thorn_Calculus.Thorn_Calculus-Core_Bisimilarities"
     "HOL-Library.BNF_Corec"
     "HOL-Library.Sublist"
 begin
@@ -285,6 +286,42 @@ proof
   ultimately show "program p \<Colon>\<^bsub>p\<^esub> Cont possibilities" for p
     by (cases p) simp_all
 qed
+
+subsection \<open>Proofs of Correctness\<close>
+
+no_notation Sublist.parallel (infixl "\<parallel>" 50)
+
+(* FIXME: This is a temporary declaration, until the real semantics are implemented. *)
+consts protocol_semantics :: "('p \<Rightarrow> 'm or_done program) \<Rightarrow> process family" (\<open>\<lbrakk>_\<rbrakk>\<close>)
+
+text \<open>
+  We show a basic correctness property of the chain synchronization mini-protocol, namely the
+  equivalence between sending a whole chain and running the mini-protocol when the client starts
+  from the genesis block and the server is given the aforementioned chain, which then is never
+  updated during the protocol run.
+\<close>
+
+(* FIXME: This is a temporary declaration. *)
+consts sync_repeated_send :: "'a sync_channel \<Rightarrow> 'a \<Rightarrow> process family" (infix \<open>\<triangleleft>\<^sup>\<infinity>\<^bsub>s\<^esub>\<close> 52)
+
+definition list_sender :: "'a::embeddable sync_channel \<Rightarrow> 'a list \<Rightarrow> process family" where
+  [simp]: "list_sender c xs = foldr (\<lambda>x p. c \<triangleleft>\<^bsub>s\<^esub> x; p) xs \<zero>"
+
+context chain_sync
+begin
+
+definition spec :: "'i list \<Rightarrow> process family" where
+  [simp]: "spec C = list_sender client_chains [C'. C' \<leftarrow> prefixes C, C' \<noteq> []]"
+
+definition impl :: "'i list \<Rightarrow> process family" where
+  [simp]: "impl C = \<lbrakk>program\<rbrakk> \<parallel> server_chains \<triangleleft>\<^sup>\<infinity>\<^bsub>s\<^esub> C"
+
+theorem fixed_chain_sync_from_genesis_correctness:
+  assumes "initial_client_chain = [hd C]"
+  shows "spec C \<approx>\<^sub>s impl C"
+  sorry
+
+end
 
 subsection \<open>The End\<close>
 
